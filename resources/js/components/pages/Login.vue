@@ -1,21 +1,26 @@
 <template>
     <Head><title>Login</title></Head>
     <navigation-bar />
-    <div class="container">
-        <h1>Login to account</h1>
-        <form @submit.prevent>
-            <div class="form-group">
-                <label>E-mail</label>
-                <input v-model="form.email" class="form-control" type="email" placeholder="example@example.com" minlength="8" maxlength="255" required>
-                <div v-if="form.errors.email" class="alert-danger">{{ form.errors.email }}</div>
+    <div class="container w-50">
+        <div class="card">
+            <div class="card-header">
+                <h1>Login</h1>
             </div>
-            <div class="form-group">
-                <label>Password</label>
-                <input v-model="form.password" class="form-control" type="password" placeholder="minimum 8 characters"  maxlength="255" required>
+            <div class="card-body">
+                <form @submit.prevent>
+                    <div class="form-floating mb-3">
+                        <input v-model="form.email" class="form-control" type="email" placeholder="example@example.com" minlength="8" maxlength="255" required>
+                        <label>E-mail</label>
+                        <div v-if="form.errors.email" class="alert-danger">{{ form.errors.email }}</div>
+                    </div>
+                    <div class="form-floating">
+                        <input v-model="form.password" class="form-control" type="password" placeholder="minimum 8 characters"  maxlength="255" required>
+                        <label>Password</label>
+                    </div>
+                    <button class="btn btn-primary mt-2 float-end" :disabled="form.processing || form.email === '' || form.password === ''" v-on:click="login">Log in</button>
+                </form>
             </div>
-            <p></p>
-            <button class="btn btn-primary" :disabled="form.processing" v-on:click="login">Log in</button>
-        </form>
+        </div>
     </div>
     <Footer />
 </template>
@@ -66,6 +71,7 @@ export default {
 };
 </script>
 
-<style scoped>
-
+<style scoped lang="sass">
+input
+    caret-color: #000000
 </style>
