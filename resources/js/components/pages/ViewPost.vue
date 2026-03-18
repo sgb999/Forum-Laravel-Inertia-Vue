@@ -11,7 +11,7 @@
             </inertia-link>
             <p>{{ this.formatDate(post.created_at) }}</p>
         </div>
-        <div v-if="post.user.id === $page.props.auth.user.id">
+        <div v-if="post.user.id === $page.props.auth.user.id" class="mt-3">
             <inertia-link :href="route('post.edit', post.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
             <button class="btn btn-danger" @click="deletePost">Delete</button>
         </div>
@@ -86,9 +86,10 @@ export default {
     padding: 10px
     width: fit-content
     border-radius: 10px
-    background-color: lightblue
+    background-color: #2A2724
     a
-        color: #0f6efd
+        text-decoration: underline
+        color: #fff
     .avatar
         height: 32px
         width: 32px

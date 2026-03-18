@@ -5,21 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
     @routes
     @vite(['resources/js/app.js', 'resources/sass/app.scss'])
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito&display=swap" rel="stylesheet">
     @inertiaHead
 </head>
 <body>
-<style>
-    body{
-        margin: 0 !important;
-        overflow-x: hidden;
-    }
-    .container {
-        margin-top: 20px;
-    }
-    .filepond--credits{
-        display: none
-    }
-</style>
 @inertia
 </body>
 </html>

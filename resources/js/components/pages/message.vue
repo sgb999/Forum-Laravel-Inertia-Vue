@@ -5,18 +5,24 @@
         <div class="grid">
             <div v-for="message in messages">
                 <hr>
-                <div v-bind:class="(message.user.id === $page.props.auth.user.id)?'user': 'not-user'" class="message">
-                    <p>{{ message.message }}</p>
-                    <inertia-link :href="route('user.profile', message.user.username)">{{ message.user.username }}</inertia-link>
+                <div class="card">
+                    <div v-bind:class="'card-body ' + (message.user.id === $page.props.auth.user.id) ? 'user': 'not-user'" class="message">
+                        <p>{{ message.message }}</p>
+                        <inertia-link :href="route('user.profile', message.user.username)">{{ message.user.username }}</inertia-link>
+                    </div>
                 </div>
             </div>
         </div>
         <hr>
         <form @submit.prevent>
-            <label>Send a Message</label>
             <div class="message">
-                <textarea v-model="form.message" class="form-control" rows="4" minlength="4"></textarea>
-                <button @click="sendMessage" type="submit" class="btn btn-primary">Submit</button>
+                <div class="form-floating">
+                    <textarea id="messageBox" v-model="form.message" class="form-control" placeholder="Send a Message"></textarea>
+                    <label for="messageBox">Send a Message</label>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button @click="sendMessage" type="submit" class="btn button-dark float-end">Submit</button>
+                    </div>
+                </div>
             </div>
         </form>
     </div>
@@ -77,10 +83,32 @@ export default {
 </script>
 
 <style scoped lang="sass">
+.user
+    text-align: right
+
 a
     text-decoration: none
-    color: #000000
+    color: #FFFFFF
 .message
+    background: #242220
+    color: #fff
+    label
+        color: #6B6760
+    textarea
+        height: 100px
+        background: #1b1a1f
+        color: #fff
+        caret-color: #ffffff
+        border-color: #6B6760
+        &:focus
+            box-shadow: none
+            outline: 0
+    .form-floating > textarea:focus ~ label::after
+        background: transparent
+        font-size: 20px
+    .form-floating > textarea ~ label::after
+        background: transparent
+        font-size: 20px
     button
         margin-top: 25px
         height: 40px

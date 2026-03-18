@@ -65,7 +65,7 @@ class PostController extends Controller
 
     public function postPage() : Response|ResponseFactory
     {
-        return inertia('MakePost', ['categories' => Category::all()]);
+        return inertia('MakePost', ['categories' => Category::select(['id', 'name'])->get()->toArray()]);
     }
 
     public function updatePostPage(Post $post) : Response|ResponseFactory
