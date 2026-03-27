@@ -1,8 +1,8 @@
 <template>
     <div class="container">
         <h3>Comments</h3>
-        <div v-if="$page.props.auth.login">
-            <form @submit.prevent class="add-comment">
+        <div v-if="$page.props.auth.login" class="d-block">
+            <form @submit.prevent class="commentForm">
                 <div class="form-floating">
                     <textarea id="new-comment" v-model="form.comment" placeholder="Comment" class="form-control" minlength="4"></textarea>
                     <label for="new-comment">Add a Comment</label>
@@ -25,9 +25,10 @@
             v-for="(comment, index) in comments.data">
             <hr>
             <p id="user-comment">{{ comment.comment }}</p>
-            <div v-if="$page.props.auth.user.id === comment.user.id">
-               <form @submit.prevent class="edit-form">
-                    <textarea id="edit-comment" class="form-control" rows="4" minlength="4">{{ comment.comment }}</textarea>
+            <div v-if="$page.props.auth.user.id === comment.user.id" class="commentForm">
+               <form @submit.prevent class="edit-form form-floating">
+                    <textarea id="edit-comment" class="form-control" rows="4" minlength="4" placeholder="Edit Comment">{{ comment.comment }}</textarea>
+                    <label id="editCommentLabel" for="edit-comment">Edit Comment</label>
                     <div class="buttons">
                         <button id="update" class="btn btn-primary" @click="updateComment(index, $event)">Update Comment</button>
                         <button id="cancel" class="btn btn-primary" @click="cancelComment(index, $event)">Cancel</button>
@@ -161,6 +162,7 @@ export default {
 
             // Shoe edit buttons
             parent.querySelector('#edit-comment').style.display = 'block';
+            parent.querySelector('#editCommentLabel').style.display = 'block';
             parent.querySelector('#update').style.display = 'block';
             parent.querySelector('#cancel').style.display = 'block';
 
@@ -174,6 +176,7 @@ export default {
 
             // Hide buttons
             parent.querySelector('#edit-comment').style.display = 'none';
+            parent.querySelector('#editCommentLabel').style.display = 'none';
             parent.querySelector('#update').style.display = 'none';
             parent.querySelector('#cancel').style.display = 'none';
 
@@ -193,7 +196,7 @@ export default {
 </script>
 
 <style scoped lang="sass">
-form
+.commentForm
     #new-comment
         height: 100px
     #edit-comment
@@ -202,22 +205,23 @@ form
         margin-bottom: 10px
     label
         color: #6B6760
-        textarea
-            height: 100px
-        textarea
-            background: #1b1a1f
-            color: #fff
-            caret-color: #ffffff
-            border-color: #6B6760
-            &:focus
-                box-shadow: none
-                outline: 0
-        .form-floating > textarea:focus ~ label::after
-            background: transparent
-            font-size: 20px
-        .form-floating > textarea ~ label::after
-            background: transparent
-            font-size: 20px
+    #editCommentLabel
+            display: none
+    textarea
+        height: 100px
+        background: #1b1a1f
+        color: #fff
+        caret-color: #ffffff
+        border-color: #6B6760
+        &:focus
+            box-shadow: none
+            outline: 0
+    .form-floating > textarea:focus ~ label::after
+        background: transparent
+        font-size: 20px
+    .form-floating > textarea ~ label::after
+        background: transparent
+        font-size: 20px
 a
     color: #FFFFFF
     text-decoration: none

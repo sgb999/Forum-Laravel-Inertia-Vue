@@ -33,7 +33,7 @@
                         </select>
                         <label for="category">Category</label>
                     </div>
-                    <button class="btn button-dark mt-2 float-end" :disabled="disableButton()" v-on:click="post">Post</button>
+                    <button class="btn button-dark mt-2 float-end" :disabled="disableButton()" v-on:click="postForm">Post</button>
                 </form>
             </div>
         </div>
@@ -55,25 +55,30 @@ export default {
     props: {
       categories: {
           required: true
-      }
+      },
+        post: {
+          required: false
+        }
     },
     data() {
         let form = useForm({
-            title : '',
-            content : '',
-            category_id : '',
+            title : this.post.data.title ? this.post.data.title : '',
+            content : this.post.data.content ? this.post.data.content : '',
+            category_id : this.post.data.category ? this.post.data.category.id : '',
             _token : this.$page.props.csrf,
         });
         return {
-            form
+            form,
+            categories: this.categories,
+            post: this.post.data ? this.post.data : null,
         }
     },
     methods: {
-        post() {
-            this.form.post(route('post.store'), {
+        postForm() {
+            this.form.put(route('post.store', this.post.data.id ? this.post.data.id : null), {
                 onSuccess: () => {
                     this.$swal({
-                        title: 'Your post has been posted!',
+                        title: this.post.data.id ? 'Your post has been updated successfully' : 'Your post has been posted!',
                         text: '',
                         icon: 'success'
                     });

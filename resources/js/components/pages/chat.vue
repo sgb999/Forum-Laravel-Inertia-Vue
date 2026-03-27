@@ -6,6 +6,7 @@
     <hr>
     <div v-for="chat in chats">
         <inertia-link :href="route('chat.show', chat.id)">{{ chat.username }}</inertia-link>
+        <hr />
     </div>
     </div>
     <Footer />
@@ -20,30 +21,18 @@ export default {
         NavigationBar,
         Footer
     },
-    data(){
-      return {
-          chats: []
-      }
-    },
-    methods: {
-        getChats()
-        {
-            axios.get(route('chat.get-chats')).then((response) => {
-                this.chats = response.data;
-            }).catch((error) => {
-                console.log('Error: ' + error);
-            });
+    props: {
+        chats: {
+            required: true
         }
-    },
-    mounted(){
-        this.getChats();
     }
 };
 </script>
 
 <style scoped lang="sass">
 a
-    color: #000000
+    color: #FFFFFF
     text-decoration: none
     font-size: 20px
+
 </style>

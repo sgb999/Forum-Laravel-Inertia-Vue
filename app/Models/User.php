@@ -7,6 +7,7 @@ namespace App\Models;
 //use App\Http\Traits\DateTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -20,8 +21,6 @@ class User extends Authenticatable implements HasMedia
     use HasFactory;
     use InteractsWithMedia;
     use Notifiable;
-  //  use DateTrait;
-
   //  use DateTrait;
 
     protected $fillable = [
@@ -51,5 +50,11 @@ class User extends Authenticatable implements HasMedia
             ->width(368)
             ->height(232)
             ->sharpen(10);
+    }
+
+    public function profilePicture(): MorphOne
+    {
+        return $this->morphOne(Media::class, 'model')
+            ->where('collection_name', 'avatar');
     }
 }

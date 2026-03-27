@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\PostStoreRequest;
+use App\Http\Resources\PostResource;
 use App\Models\Category;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
@@ -63,37 +64,20 @@ class PostController extends Controller
         );
     }
 
-    public function postPage() : Response|ResponseFactory
+    public function postPage(?Post $post) : Response|ResponseFactory
     {
-        return inertia('MakePost', ['categories' => Category::select(['id', 'name'])->get()->toArray()]);
+        return inertia('MakePost', [
+            'post'       => $post ? new PostResource($post?->loadMissing('category:id')) : null,
+            'categories' => Category::select(['id', 'name'])->get()->toArray()]
+        );
     }
 
-    public function updatePostPage(Post $post) : Response|ResponseFactory
-    {
-        abort_if($post->user_id !== auth()->id(), 403);
-        return inertia('updatePost', [
-            'post'       => $post,
-            'categories' => Category::all(),
-        ]);
-    }
-
-    public function store(PostStoreRequest $request) : RedirectResponse
+    public function upsert(?Post $post, PostStoreRequest $request) : RedirectResponse
     {
         $validated  = $request->validated();
-        $validated += ['user_id' => auth()->id()];
-        $post       = Post::create($validated);
+        $post       = Post::updateOrCreate(['id' => $post?->id], array_merge($validated, ['user_id' => auth()->id()]));
 
         return redirect()->route('post.show', $post->id);
-    }
-
-    public function edit(Post $post, PostStoreRequest $request) : Response|ResponseFactory
-    {
-        abort_unless($post->user_id === auth()->id(), 403);
-        $validated = $request->validated();
-        $post->update($validated);
-        $post->save();
-
-        return $this->viewPost($post->id);
     }
 
     public function getProfilePosts(int $id) : JsonResponse
