@@ -22,7 +22,7 @@ class MessageController extends Controller
         );
     }
 
-    public function store(MessageStoreRequest $request) : RedirectResponse
+    public function store(MessageStoreRequest $request)
     {
         $validated  = $request->validated();
         $validated += ['user_id' => auth()->id()];
@@ -36,6 +36,7 @@ class MessageController extends Controller
     public function index(Chat $chat) : JsonResponse
     {
         abort_unless($chat->user_id_1 === auth()->id() || $chat->user_id_2 === auth()->id(), 403);
+
         return response()->json(
             Message::where('chat_id', $chat->id)
             ->with('user:id,username')

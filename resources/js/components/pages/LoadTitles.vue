@@ -3,7 +3,7 @@
     <div class="container">
         <div class="row">
             <h2 class="col">Topics</h2>
-            <inertia-link v-if="$page.props.auth.login" class="btn btn-primary col-2" href="/post/">Make a Post</inertia-link>
+            <inertia-link v-if="$page.props.auth.login" class="btn button-dark col-2" href="/post/">Make a Post</inertia-link>
         </div>
         <hr>
         <view-topics :topics="topics.data"/>

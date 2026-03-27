@@ -1,14 +1,15 @@
 <template>
-    <h1 id="header">Assassin's creed forum</h1>
-    <ul class="topnav">
-        <li><inertia-link :href="route('home')">Home</inertia-link></li>
-        <li><inertia-link :href="route('categories.index')">View Categories</inertia-link></li>
-        <li v-if="user" class="right"><inertia-link :href="route('log-out')"><span class="glyphicon glyphicon-log-out red"></span> Sign out</inertia-link></li>
-        <li v-if="user" class="right"><inertia-link :href="route('chat.index')"><span class="glyphicon glyphicon-envelope yellow"></span>Messages</inertia-link></li>
-        <li v-if="user" class="right"><inertia-link :href="route('user.profile', username)">Profile</inertia-link></li>
-        <li v-if="!user" class="right"><inertia-link :href="route('register.index')"><span class="glyphicon glyphicon-user green"></span>Sign Up</inertia-link></li>
-        <li v-if="!user" class="right"><inertia-link :href="route('login.index')"><span class="glyphicon glyphicon-log-in green"></span>Login</inertia-link></li>
-    </ul>
+    <nav>
+        <ul>
+            <li><inertia-link :href="route('home')">Home</inertia-link></li>
+            <li><inertia-link :href="route('categories.index')" prefetch>View Categories</inertia-link></li>
+            <li v-if="user" class="float-end"><inertia-link :href="route('log-out')"><span class="bi bi-box-arrow-right red me-1"></span> Sign out</inertia-link></li>
+            <li v-if="user" class="float-end"><inertia-link :href="route('chat.index')" prefetch><span class="bi bi-envelope-fill yellow me-1"></span>Messages</inertia-link></li>
+            <li v-if="user" class="float-end"><inertia-link :href="route('user.profile', username)">Profile</inertia-link></li>
+            <li v-if="!user" class="float-end"><inertia-link :href="route('register.index')" prefetch ><span class="bi bi-person-fill me-1 green"></span>Sign Up</inertia-link></li>
+            <li v-if="!user" class="float-end"><inertia-link :href="route('login.index')" prefetch><span class="bi bi-box-arrow-in-right me-1 green"></span>Login</inertia-link></li>
+        </ul>
+    </nav>
 </template>
 <script>
 export default {
@@ -24,83 +25,35 @@ export default {
 };
 </script>
 
-<style scoped>
-body {
-    margin: 0;
-}
-ul.topnav {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: #333;
-}
-
-ul.topnav li {float: left;}
-
-ul.topnav li a {
-    display: block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-}
-.dropdown {
-    float: left;
-    overflow: hidden;
-}
-
-.dropdown .dropbtn {
-    font-size: 16px;
-    border: none;
-    outline: none;
-    color: white;
-    padding: 14px 16px;
-    background-color: inherit;
-    font-family: inherit;
-    margin: 0;
-}
-
-.navbar a:hover, .dropdown:hover .dropbtn {
-    background-color: red;
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    background-color: #f9f9f9;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
-    z-index: 1;
-}
-
-.dropdown-content a {
-    float: none;
-    color: black;
-    padding: 12px 16px;
-    text-decoration: none;
-    display: block;
-    text-align: left;
-}
-
-.dropdown-content a:hover {
-    background-color: #ddd;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-#header {
-    text-align: center;
-}
-ul.topnav li a:hover:not(.active) {background-color: #111;}
-
-ul.topnav li a.active {background-color: #04AA6D;}
-
-ul.topnav li.right {float: right;}
-
-@media screen and (max-width: 600px) {
-    ul.topnav li.right,
-    ul.topnav li {float: none;}
-}
+<style scoped lang="sass">
+nav
+    ul
+        list-style-type: none
+        margin: 0
+        padding: 0
+        overflow: hidden
+        background-color: #151210
+        li
+            float: left
+            padding: 14px 16px
+            &:hover
+                border-radius: 10px
+                padding: 6px 10px
+                margin: 8px 6px
+                background-color: #2E2B28
+                cursor: pointer
+            a
+                display: block
+                color: #9E9A94
+                text-align: center
+                text-decoration: none
+                float: none
+                &:hover:not(.active)
+                    background-color: transparent
+                .green
+                    color: #008000
+                .yellow
+                    color: #FFFF00
+                .red
+                    color: #FF0000
 </style>

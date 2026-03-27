@@ -4,17 +4,21 @@
         <page-loader  v-if="!topics"/>
         <div v-if="topics"
            v-for="topic in topics"
-            class="grid">
-            <inertia-link :href="route('post.show', topic.id)">
-            <h3>{{topic.title}}</h3>
-            </inertia-link>
-            <inertia-link :href="route('user.profile', topic.user.username)">
-                <p>{{topic.user.username}}</p>
-            </inertia-link>
-            <inertia-link :href="route('topics.show', topic.category.id)">
-                <p>{{ topic.category.name }}</p>
-            </inertia-link>
-            <p>{{ this.formatDate(topic.created_at) }}</p>
+            class="card">
+                <div class="card-header">
+                    <inertia-link :href="route('post.show', topic.id)">
+                        <h3>{{topic.title}}</h3>
+                    </inertia-link>
+                </div>
+                <div class="card-body">
+                    <inertia-link :href="route('user.profile', topic.user.username)">
+                        <p>{{topic.user.username}}</p>
+                    </inertia-link>
+                    <inertia-link :href="route('topics.show', topic.category.id)">
+                        <p>{{ topic.category.name }}</p>
+                    </inertia-link>
+                    <p>{{ this.formatDate(topic.created_at) }}</p>
+                </div>
         </div>
     </div>
 </template>
@@ -52,17 +56,15 @@ a, a:hover, a:focus, a:active
     grid-column-gap: 20px
     grid-row-gap: 15px
     height: fit-content
-    .grid
-        padding: 20px
-        margin-bottom: 10px
-        background-color: lightgray
+    .card
+        background: #242220
+        color: #fff
         border-radius: 25px
-        box-shadow: rgba(17, 17, 26, 0.1) 0 4px 16px, rgba(17, 17, 26, 0.1) 0 8px 24px, rgba(17, 17, 26, 0.1) 0 16px 24px
         animation: posts-load running 500ms
-        transition: transform 0.8s
-    .grid:hover
-        transform: scale(1.2)
-
+        transition: transform 0.8s, box-shadow 0.8s
+        &:hover
+            transform: translateY(-5px)
+            box-shadow: 0 5px 15px rgba(255, 255, 255, 0.3)
     @keyframes posts-load
         0%
             transform: translateX(-100%)

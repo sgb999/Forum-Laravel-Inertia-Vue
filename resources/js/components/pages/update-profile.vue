@@ -34,7 +34,7 @@
                     />
                 </div>
                 <div class="col">
-                    <button class="btn btn-primary" :disabled="form.banner === ''" @click="updateProfileBanner">Update Profile Banner</button>
+                    <button class="btn button-dark" :disabled="form.banner === ''" @click="updateProfileBanner">Update Profile Banner</button>
                 </div>
             </div>
             <div class="row">
@@ -61,84 +61,94 @@
                     />
                 </div>
                 <div class="col">
-                    <button class="btn btn-primary" :disabled="form.avatar === ''" @click="updateProfilePicture">Update Profile Picture</button>
+                    <button class="btn button-dark" :disabled="form.avatar === ''" @click="updateProfilePicture">Update Profile Picture</button>
                 </div>
             </div>
             <div class="row">
-                <label for="name">Name</label>
                 <div class="col">
-                    <input v-model="form.name" id="name" class="form-control col-4 d-flex justify-content-center" type="text"
-                           placeholder="John Doe"  maxlength="255"
-                           autocomplete="off">
-                    <div v-if="$page.props.errors.name" class="alert-danger">
-                        <ul>
-                            <li>{{ $page.props.errors.name }}</li>
-                        </ul>
+                    <div class="form-floating">
+                        <input v-model="form.name" id="name" class="form-control col-4 d-flex justify-content-center" type="text"
+                               placeholder="John Doe"  maxlength="255"
+                               autocomplete="off">
+                        <label for="name">Name</label>
+                        <div v-if="$page.props.errors.name" class="alert-danger">
+                            <ul>
+                                <li>{{ $page.props.errors.name }}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="col">
-                    <button class="btn btn-primary" :disabled="form.name === ''" @click="updateName">Update Name</button>
+                    <button class="btn button-dark" :disabled="form.name === ''" @click="updateName">Update Name</button>
                 </div>
             </div>
-            <div class="row">
-                <label for="username">Username</label>
+            <div class="row mt-3">
                 <div class="col">
-                    <input id="username" class="form-control col-4 d-flex justify-content-center" type="text"
-                           v-model="form.username" placeholder="user123" maxlength="255" autocomplete="off">
-                    <div v-if="$page.props.errors.username" class="alert-danger">
-                        <ul>
-                            <li>{{ $page.props.errors.username }}</li>
-                        </ul>
+                    <div class="form-floating">
+                        <input id="username" class="form-control col-4 d-flex justify-content-center" type="text"
+                               v-model="form.username" :placeholder="user.name" maxlength="255" autocomplete="off">
+                        <label for="username">Username</label>
+                        <div v-if="$page.props.errors.username" class="alert-danger">
+                            <ul>
+                                <li>{{ $page.props.errors.username }}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="col">
-                    <button @click="updateUsername" class="btn btn-primary" :disabled="form.username === ''">Update username</button>
+                    <button @click="updateUsername" class="btn button-dark" :disabled="form.username === ''">Update username</button>
                 </div>
             </div>
-            <div class="row">
-                <label for="email">Email</label>
+            <div class="row mt-3">
                 <div class="col">
-                    <input v-model="form.email" id="email" class="form-control col-4 d-flex justify-content-center" type="text"
-                           placeholder="example@example.com" maxlength="255" autocomplete="off">
-                    <div v-if="$page.props.errors.email" class="alert-danger">
-                        <ul>
-                            <li>{{ $page.props.errors.email }}</li>
-                        </ul>
+                    <div class="form-floating">
+                        <input v-model="form.email" id="email" class="form-control col-4 d-flex justify-content-center" type="text"
+                               placeholder="example@example.com" maxlength="255" autocomplete="off">
+                        <label for="email">Email</label>
+                        <div v-if="$page.props.errors.email" class="alert-danger">
+                            <ul>
+                                <li>{{ $page.props.errors.email }}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="col">
-                    <button class="btn btn-primary" :disabled="form.email === ''" @click="updateEmail">Update E-mail Address</button>
+                    <button class="btn button-dark" :disabled="form.email === ''" @click="updateEmail">Update E-mail Address</button>
                 </div>
             </div>
-            <div class="row">
-                <label for="password">Password</label>
+            <div class="row mt-3">
                 <div class="col">
-                    <input v-model="form.password" id="password" class="form-control col-4 d-flex justify-content-center" type="text"
-                           placeholder="Password: Minimum 8 characters" minlength="8" maxlength="255"
-                           autocomplete="off">
-                    <div v-if="$page.props.errors.password" class="alert-danger">
-                        <ul>
-                            <li>{{ $page.props.errors.password }}</li>
-                        </ul>
+                    <div class="form-floating">
+                        <input v-model="form.password" id="password" class="form-control col-4 d-flex justify-content-center" type="text"
+                               placeholder="Password: Minimum 8 characters" minlength="8" maxlength="255"
+                               autocomplete="off">
+                        <label for="password">Password</label>
+                        <div v-if="$page.props.errors.password" class="alert-danger">
+                            <ul>
+                                <li>{{ $page.props.errors.password }}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="col">
                 </div>
             </div>
-            <div class="row">
-                <label for="password_confirmation">Confirm Password</label>
+            <div class="row mt-3">
                 <div class="col">
-                    <input id="password_confirmation" class="form-control col-4 d-flex justify-content-center"
-                           type="text" v-model="form.password_confirmation" placeholder="Must match Password"
-                           maxlength="255" autocomplete="off">
-                    <div v-if="$page.props.errors.password_confirmation" class="alert-danger">
-                        <ul>
-                            <li>{{ $page.props.errors.password_confirmation }}</li>
-                        </ul>
+                    <div class="form-floating">
+                        <input id="password_confirmation" class="form-control col-4 d-flex justify-content-center"
+                               type="text" v-model="form.password_confirmation" placeholder="Must match Password"
+                               maxlength="255" autocomplete="off">
+                        <label for="password_confirmation">Confirm Password</label>
+                        <div v-if="$page.props.errors.password_confirmation" class="alert-danger">
+                            <ul>
+                                <li>{{ $page.props.errors.password_confirmation }}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
                 <div class="col">
-                    <button class="btn btn-primary" :disabled="form.password === '' || form.password_confirmation === ''" @click="updatePassword">Update Password</button>
+                    <button class="btn button-dark" :disabled="form.password === '' || form.password_confirmation === ''" @click="updatePassword">Update Password</button>
                 </div>
             </div>
             <button id="delete-button" class="btn btn-danger" @click="deleteProfile">Delete Profile</button>
@@ -415,4 +425,17 @@ form
     margin: 10px auto auto
     width: 60%
     border-radius: 10px
+    label
+        color: #6B6760
+    input
+        background: #1b1a1f
+        color: #fff
+        caret-color: #ffffff
+        border-color: #6B6760
+        &:focus
+            background: #1b1a1f
+            color: #fff
+            border-color: #6B6760
+            box-shadow: none
+            outline: 0
 </style>

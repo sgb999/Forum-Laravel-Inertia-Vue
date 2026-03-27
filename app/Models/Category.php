@@ -13,8 +13,6 @@ class Category extends Model
     use HasFactory;
   //  use DateTrait;
 
-  //  use DateTrait;
-
     protected $fillable = [
         'name',
         'description',

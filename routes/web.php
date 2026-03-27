@@ -50,18 +50,15 @@ Route::middleware(['auth'])->group(function () {
           //  Route::get('/user/{user:username}', 'index')->name('user.profile');
         });
 
-    Route::inertia('/chats', 'chat')->name('chat.index');
-    Route::get('/user-chats', [ChatController::class, 'getChats'])->name('chat.get-chats');
+    Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.index');
     Route::get('/message/user/{user}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/message', [MessageController::class, 'store'])->name('message.store');
     Route::get('/message{chat}', [MessageController::class, 'index'])->name('message.index');
 
     //Post routing
     Route::prefix('/post')->controller(PostController::class)->group(function () {
-        Route::get('/', 'postPage');
-        Route::post('/', 'store')->name('post.store');
-        Route::get('/update/{post}', 'updatePostPage')->name('post.edit');
-        Route::put('/{post}', 'edit')->name('post.thing');
+        Route::get('/{post?}', 'postPage')->name('post.index');
+        Route::put('/{post?}', 'upsert')->name('post.store');
         Route::delete('/{post}', 'destroy')->name('post.destroy');
     });
 });

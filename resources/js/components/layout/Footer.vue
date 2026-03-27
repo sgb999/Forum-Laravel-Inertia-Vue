@@ -1,7 +1,7 @@
 <template>
     <div class="row">
         <div class="footer col-xs-12">
-            <p>© 2022 Copyright:</p>
+            <p>© 2026 Copyright:</p>
         </div>
     </div>
 </template>
@@ -18,5 +18,5 @@ export default {
     clear: both
     margin-top: 20px
     text-align: center
-    background-color: #000000
+    background-color: #151210
 </style>
