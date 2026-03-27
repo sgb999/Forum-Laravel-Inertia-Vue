@@ -16,8 +16,6 @@ class Post extends Model
     use HasFactory;
     //use DateTrait;
 
-    //use DateTrait;
-
     protected $fillable = [
         'title',
         'content',

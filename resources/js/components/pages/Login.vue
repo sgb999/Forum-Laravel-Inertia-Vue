@@ -17,7 +17,7 @@
                         <input v-model="form.password" class="form-control" type="password" placeholder="minimum 8 characters"  maxlength="255" required>
                         <label>Password</label>
                     </div>
-                    <button class="btn btn-primary mt-2 float-end" :disabled="form.processing || form.email === '' || form.password === ''" v-on:click="login">Log in</button>
+                    <button class="btn button-dark mt-2 float-end" :disabled="form.processing || form.email === '' || form.password === ''" v-on:click="login">Log in</button>
                 </form>
             </div>
         </div>
@@ -72,6 +72,20 @@ export default {
 </script>
 
 <style scoped lang="sass">
+.card
+    background: #242220
+    color: #fff
+    label
+        color: #6B6760
 input
-    caret-color: #000000
+    background: #1b1a1f
+    color: #fff
+    caret-color: #ffffff
+    border-color: #6B6760
+    &:focus
+        background: #1b1a1f
+        color: #fff
+        border-color: #6B6760
+        box-shadow: none
+        outline: 0
 </style>

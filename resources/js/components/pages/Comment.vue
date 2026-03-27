@@ -1,25 +1,41 @@
 <template>
     <div class="container">
         <h3>Comments</h3>
+        <div v-if="$page.props.auth.login" class="d-block">
+            <form @submit.prevent class="commentForm">
+                <div class="form-floating">
+                    <textarea id="new-comment" v-model="form.comment" placeholder="Comment" class="form-control" minlength="4"></textarea>
+                    <label for="new-comment">Add a Comment</label>
+                    <div v-if="form.errors.comment" class="alert-danger">
+                        <ul>
+                            <li>{{ form.errors.comment }}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button class="btn button-dark float-end" :disabled="Object.keys(form.comment).length < 4 || form.processing" v-on:click="setComment">Submit</button>
+                </div>
+            </form>
+        </div>
         <page-loader v-if="!comments.data"/>
-        <div v-if="comments.data < 1" class="empty-comments">
+        <div v-if="comments.data < 1" class="empty-comments mt-3">
             <h4>There are no comments yet</h4>
         </div>
         <div v-if="comments.data" :key="comment.id"
             v-for="(comment, index) in comments.data">
             <hr>
-            <p>{{ comment.comment }}</p>
-            <div v-if="$page.props.auth.user.id === comment.user.id">
-                <form @submit.prevent class="edit-form">
-                    <textarea
-                          class="form-control" rows="4" minlength="4">{{ comment.comment }}</textarea>
-                </form>
-                <div class="buttons">
-                    <button id="update" class="btn btn-primary" @click="updateComment(index, $event)">Update Comment</button>
-                    <button id="cancel" class="btn btn-primary" @click="cancelComment(index, $event)">Cancel</button>
-                    <button id="edit" class="btn btn-primary" @click="openForm">Edit Comment</button>
-                    <button id="delete" class="btn btn-danger" @click="deleteComment(index)">Delete Comment</button>
-                </div>
+            <p id="user-comment">{{ comment.comment }}</p>
+            <div v-if="$page.props.auth.user.id === comment.user.id" class="commentForm">
+               <form @submit.prevent class="edit-form form-floating">
+                    <textarea id="edit-comment" class="form-control" rows="4" minlength="4" placeholder="Edit Comment">{{ comment.comment }}</textarea>
+                    <label id="editCommentLabel" for="edit-comment">Edit Comment</label>
+                    <div class="buttons">
+                        <button id="update" class="btn btn-primary" @click="updateComment(index, $event)">Update Comment</button>
+                        <button id="cancel" class="btn btn-primary" @click="cancelComment(index, $event)">Cancel</button>
+                        <button id="edit" class="btn btn-primary" @click="openForm">Edit Comment</button>
+                        <button id="delete" class="btn btn-danger" @click="deleteComment(index)">Delete Comment</button>
+                    </div>
+               </form>
             </div>
             <inertia-link :href="route('user.profile', comment.user.username)">
                 {{ comment.user.username }}
@@ -27,15 +43,6 @@
             <p>{{ this.formatDate(comment.created_at) }}</p>
         </div>
         <pagination v-if="comments.links" :links="comments.links" @nextPage="getComments($event)"></pagination>
-
-        <div v-if="$page.props.auth.login">
-            <form @submit.prevent>
-                <label>Post a Comment</label>
-                <textarea v-model="form.comment" class="form-control" rows="4" minlength="4"></textarea>
-                <div v-if="form.errors.comment" class="alert-danger">{{ form.errors.comment }}</div>
-                <button class="btn btn-primary" :disabled="Object.keys(form.comment).length < 4 || form.processing" v-on:click="setComment">Post Comment</button>
-            </form>
-        </div>
     </div>
 </template>
 
@@ -79,7 +86,7 @@ export default {
             axios.get(site).then((response) => {
                 this.comments = response.data;
             }).catch((error) => {
-            console.log('Error: ' + error);
+                console.log('Error: ' + error);
             });
         },
         setComment(){
@@ -97,14 +104,14 @@ export default {
            this.form.comment = '';
         },
         cancelComment(index, event){
-            event.target.parentElement.parentElement.childNodes[0].querySelector("textarea").value = this.comments.data[index].comment;
+            const form = event.target.closest('.edit-form');
+            form.querySelector("textarea").value = this.comments.data[index].comment;
             this.closeForm(event);
         },
         updateComment(index, event){
-            const form = event.target.parentElement.parentElement.childNodes[0];
             const comment = useForm({
                 _token : this.$page.props.csrf,
-                comment: form.querySelector("textarea").value
+                comment: event.target.parentElement.parentElement.querySelector('textarea').value
             });
             this.$inertia.put(`/comment/${this.comments.data[index].id}`, comment, {
                 onSuccess: () => {
@@ -133,7 +140,7 @@ export default {
                     if(result.isConfirmed){
                         this.$inertia.delete(`/comment/${this.comments.data[index].id}`, {
                             onSuccess: () => {
-                                this.comments.data.splice(index);
+                                this.comments.data.splice(index, 1);
                                 this.$swal({
                                     title: 'Your comment has been Deleted!',
                                     text: '',
@@ -149,30 +156,33 @@ export default {
 
             });
         },
-        removeUnwantedChars()
-        {
-            for(let i = 0; i < this.comments.length; i++) {
-                this.comments.created_at[i] = this.comments.created_at[i].split(".")[0];
-            }
-        },
         openForm(event)
         {
-            const button = event.target.parentNode;
-            event.target.closest('#edit').style.display = 'none';
-            button.childNodes[0].style.display = 'block';
-            button.childNodes[1].style.display = 'block';
-            button.parentNode.firstElementChild.style.display = 'block';
-            button.parentNode.parentNode.getElementsByTagName('p')[0].style.display = 'none';
+            const parent = event.target.parentElement.parentElement.parentElement.parentElement;
+
+            // Shoe edit buttons
+            parent.querySelector('#edit-comment').style.display = 'block';
+            parent.querySelector('#editCommentLabel').style.display = 'block';
+            parent.querySelector('#update').style.display = 'block';
+            parent.querySelector('#cancel').style.display = 'block';
+
+            // Hide comment and edit button
+            parent.querySelector('#edit').style.display = 'none';
+            parent.querySelector('#user-comment').style.display = 'none';
         },
         closeForm(event)
         {
-            const div = event.target.parentElement.parentElement;
-            const buttons = div.getElementsByTagName('div')[0];
-            div.getElementsByTagName('form')[0].style.display = 'none';  // hide edit form
-            buttons.childNodes[0].style.display = 'none'; // hide update button
-            buttons.childNodes[1].style.display = 'none'; // hide cancel button
-            buttons.childNodes[2].style.display = 'block'; // show edit button
-            event.target.parentNode.parentNode.parentNode.getElementsByTagName('p')[0].style.display = 'block'; // show updated text
+            const parent = event.target.parentElement.parentElement.parentElement.parentElement;
+
+            // Hide buttons
+            parent.querySelector('#edit-comment').style.display = 'none';
+            parent.querySelector('#editCommentLabel').style.display = 'none';
+            parent.querySelector('#update').style.display = 'none';
+            parent.querySelector('#cancel').style.display = 'none';
+
+            // Show edit button and comment again
+            parent.querySelector('#edit').style.display = 'block';
+            parent.querySelector('#user-comment').style.display = 'block';
         },
       formatDate(value)
       {
@@ -186,13 +196,35 @@ export default {
 </script>
 
 <style scoped lang="sass">
-.form-control
-    margin-bottom: 10px
+.commentForm
+    #new-comment
+        height: 100px
+    #edit-comment
+        display: none
+    .form-control
+        margin-bottom: 10px
+    label
+        color: #6B6760
+    #editCommentLabel
+            display: none
+    textarea
+        height: 100px
+        background: #1b1a1f
+        color: #fff
+        caret-color: #ffffff
+        border-color: #6B6760
+        &:focus
+            box-shadow: none
+            outline: 0
+    .form-floating > textarea:focus ~ label::after
+        background: transparent
+        font-size: 20px
+    .form-floating > textarea ~ label::after
+        background: transparent
+        font-size: 20px
 a
-    color: #000000
+    color: #FFFFFF
     text-decoration: none
-.edit-form
-    display: none
 #update
     display: none
 #cancel

@@ -7,7 +7,7 @@ namespace App\Models;
 //use App\Http\Traits\DateTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Chat extends Model
 {
@@ -21,8 +21,13 @@ class Chat extends Model
         'user_id_2',
     ];
 
-    public function user() : BelongsToMany
+    public function user1() : BelongsTo
     {
-        return $this->belongsToMany(User::class, 'users');
+        return $this->belongsTo(User::class, 'user_id_1');
+    }
+
+    public function user2() : BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id_2');
     }
 }

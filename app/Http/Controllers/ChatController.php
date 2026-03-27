@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\MessageResource;
+use App\Http\Resources\UserResource;
 use App\Models\Chat;
+use App\Models\Message;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
@@ -28,24 +31,22 @@ class ChatController extends Controller
         );
     }
 
-    public function getChats() : JsonResponse
+    public function getChats() : Response|ResponseFactory
     {
-        $users1 = DB::table('users')
-        ->join('chats', 'chats.user_id_2', '=', 'users.id')
-        ->select('users.username', 'users.id')
-        ->where('chats.user_id_1', '=', auth()->id())
-        ->get()
-        ->toArray();
-        $users2 = DB::table('users')
-        ->join('chats', 'chats.user_id_1', '=', 'users.id')
-        ->where('chats.user_id_2', '=', auth()->id())
-        ->select('users.username', 'users.id')
-        ->get()
-        ->toArray();
-
-        $users = array_merge($users1, $users2);
-
-        return response()->json($users);
+        return inertia('chat', [
+            'chats' => array_merge(DB::table('users')
+            ->join('chats', 'chats.user_id_2', '=', 'users.id')
+            ->select('users.username', 'users.id')
+            ->where('chats.user_id_1', '=', auth()->id())
+            ->get()
+            ->toArray(), DB::table('users')
+            ->join('chats', 'chats.user_id_1', '=', 'users.id')
+            ->where('chats.user_id_2', '=', auth()->id())
+            ->select('users.username', 'users.id')
+            ->get()
+            ->toArray())
+            ]
+        );
     }
 
     public function show(int $id) : Response|ResponseFactory
@@ -67,7 +68,14 @@ class ChatController extends Controller
         }
         return inertia('message', [
             'id'       => $chat->id,
-            'messages' => route('message.index', $id),
+            'user'     => new UserResource(User::with('profilePicture')
+                ->select('id', 'username')
+                ->find($id)),
+            'messages' => MessageResource::collection(
+                Message::where('chat_id', $chat->id)
+                ->with('user:id,username')
+                ->get()
+            ),
         ]);
     }
 }
