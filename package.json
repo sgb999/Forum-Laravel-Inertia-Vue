@@ -33,6 +33,7 @@
         "graphql": "^15.8.0",
         "graphql-tag": "^2.12.6",
         "moment": "^2.29.4",
+        "playwright": "^1.58.2",
         "vue-apollo": "^3.1.0",
         "vue-filepond": "^7.0.2",
         "vue-sweetalert2": "^5.0.2"

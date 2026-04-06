@@ -25,11 +25,11 @@ class UserController extends Controller
         if (auth()->attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->route('home');
-        } else {
-            return redirect()->back()->withErrors([
-                'email' => 'The provided credentials do not match our records.',
-            ]);
         }
+
+        return redirect()->back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ]);
     }
 
     public function register(UserStoreRequest $request) : RedirectResponse
@@ -131,7 +131,7 @@ class UserController extends Controller
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return back();
+        return back(route('home'));
     }
 
     public function storeImage(ImagePostRequest $request) : string
@@ -150,19 +150,4 @@ class UserController extends Controller
         }
         return $folder;
     }
-
-    /**
-     * can be used on profile page, is quicker to execute but would require a new vue component
-    public function getUserPosts(int $id)
-    {
-    return response()->json(
-    User::whereId($id)
-    ->with(['post' => function ($query){
-    $query->with('category:id,name')
-    ->select('id', 'title', 'user_id', 'category_id', 'created_at')
-    ->orderBy('created_at', 'desc');
-    }])->select('id', 'username')
-    ->paginate(10)
-    );
-    }*/
 }
