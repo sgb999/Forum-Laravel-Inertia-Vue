@@ -15,8 +15,6 @@ class Comment extends Model
     use HasFactory;
    // use DateTrait;
 
-   // use DateTrait;
-
     protected $fillable = [
         'comment',
         'post_id',

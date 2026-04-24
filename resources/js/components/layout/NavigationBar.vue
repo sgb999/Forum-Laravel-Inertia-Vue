@@ -1,11 +1,11 @@
 <template>
     <nav>
         <ul>
-            <li><inertia-link :href="route('home')">Home</inertia-link></li>
-            <li><inertia-link :href="route('categories.index')" prefetch>View Categories</inertia-link></li>
+            <li><inertia-link :href="route('post.show')">Home</inertia-link></li>
+            <li><inertia-link :href="route('categories.show')" prefetch>View Categories</inertia-link></li>
             <li v-if="user" class="float-end"><inertia-link :href="route('log-out')"><span class="bi bi-box-arrow-right red me-1"></span> Sign out</inertia-link></li>
             <li v-if="user" class="float-end"><inertia-link :href="route('chat.index')" prefetch><span class="bi bi-envelope-fill yellow me-1"></span>Messages</inertia-link></li>
-            <li v-if="user" class="float-end"><inertia-link :href="route('user.profile', username)">Profile</inertia-link></li>
+            <li v-if="user" class="float-end"><inertia-link :href="route('user.index', username)">Profile</inertia-link></li>
             <li v-if="!user" class="float-end"><inertia-link :href="route('register.index')" prefetch ><span class="bi bi-person-fill me-1 green"></span>Sign Up</inertia-link></li>
             <li v-if="!user" class="float-end"><inertia-link :href="route('login.index')" prefetch><span class="bi bi-box-arrow-in-right me-1 green"></span>Login</inertia-link></li>
         </ul>

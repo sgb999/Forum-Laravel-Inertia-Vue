@@ -1,7 +1,7 @@
 <template>
     <Head><title>Register</title></Head>
     <navigation-bar />
-    <div class="container w-50">
+    <div class="container">
         <div class="card">
             <div class="card-header">
                 <h1>Register an account</h1>
@@ -87,8 +87,8 @@
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import NavigationBar from "../../layout/NavigationBar.vue";
+import Footer from "../../layout/Footer.vue";
 // Import Vue FilePond
 import vueFilePond from "vue-filepond";
 // Import FilePond styles
@@ -147,6 +147,9 @@ export default {
 </script>
 
 <style scoped lang="sass">
+@media (min-device-width: 678px)
+    .container
+        width: 50%
 .card
     background: #242220
     color: #fff

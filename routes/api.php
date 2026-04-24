@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MessageController;
+use App\Http\Controllers\PostController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -16,6 +19,13 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
+Route::middleware(['web','auth'])->group(function () {
+    Route::controller(MessageController::class)->group(function () {
+        Route::group(['prefix' => 'message'], function () {
+            Route::name('message.')->group(function () {
+                Route::get('/{chat}', 'index')->name('index');
+                Route::post('/', 'store')->name('store');
+            });
+       });
+    });
 });

@@ -5,11 +5,11 @@
         <h3>{{post.title}}</h3>
         <p>{{post.content}}</p>
         <div class="user">
-            <img class="avatar"  :src="avatar ? avatar : '/storage/default/avatar.png'" alt="avatar">
-            <inertia-link :href="route('user.profile', post.user.username)">
+            <img class="avatar" :src="post.user.profilePicture?.thumb || '/storage/default/avatar.png'" alt="avatar">
+            <inertia-link :href="route('user.index', { username : post.user.username,  user_id: post.user.id })">
                 {{post.user.username}}
             </inertia-link>
-            <p>{{ this.formatDate(post.created_at) }}</p>
+            <p>{{ this.formatDate(post.createdAt) }}</p>
         </div>
         <div v-if="post.user.id === $page.props.auth.user.id" class="mt-3">
             <inertia-link :href="route('post.index', post.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
@@ -17,33 +17,48 @@
         </div>
         <hr>
     </div>
-    <comment :id="post.id"/>
+    <div class="container">
+        <h3>Comments</h3>
+        <Deferred data="comments">
+            <template #fallback>
+                <page-loader />
+            </template>
+            <comment :comments="comments"/>
+        </Deferred>
+    </div>
     <Footer />
 </template>
 
 <script>
-import { useForm } from "@inertiajs/vue3";
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
-import Comment from "./Comment.vue";
+import { useForm, Deferred } from "@inertiajs/vue3";
+import NavigationBar from "../../layout/NavigationBar.vue";
+import Footer from "../../layout/Footer.vue";
+import Comment from "../Comment.vue";
 import moment from "moment/moment";
+import PageLoader from "../PageLoader.vue";
 export default {
-    name: "ViewPost",
+    name: "Index",
     props:{
         post: {
+            required: true
+        },
+        comments: {
             required: true
         }
     },
     components: {
+        PageLoader,
         NavigationBar,
         Footer,
-        Comment
+        Comment,
+        Deferred
     },
     data(){
         let form = useForm({
             _token : this.$page.props.csrf
         });
         return {
+            post: this.post.data,
             avatar: '',
             form
         }
@@ -72,11 +87,11 @@ export default {
       }
     },
     mounted(){
-        this.post.user.media.forEach(el => {
+        /**this.post.user.media.forEach(el => {
             if(el.collection_name === 'avatar'){
                 this.avatar = el.original_url;
             }
-        })
+        })*/
     }
 };
 </script>

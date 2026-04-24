@@ -4,8 +4,8 @@
     <div class="container">
         <h2>Categories</h2>
         <hr>
-        <inertia-link v-for="category in categories"
-           :href="'/view-topics/' + category.id">
+        <inertia-link v-for="category in categories.data"
+           :href="route('post.show',{ category_id: category.id})">
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
         </inertia-link>
@@ -14,10 +14,10 @@
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import NavigationBar from "../../layout/NavigationBar.vue";
+import Footer from "../../layout/Footer.vue";
 export default {
-    name: "categories",
+    name: "Categories",
     components: {
         NavigationBar,
         Footer

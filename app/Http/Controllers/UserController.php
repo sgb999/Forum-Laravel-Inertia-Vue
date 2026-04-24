@@ -4,27 +4,53 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ImagePostRequest;
-use App\Http\Requests\UserEditRequest;
-use App\Http\Requests\UserLoginRequest;
-use App\Http\Requests\UserStoreRequest;
+use App\Http\Resources\UserResource;
+use App\Models\Chat;
+use App\Models\Comment;
+use App\Models\Message;
+use App\Models\Post;
+use App\Http\Requests\{ImagePostRequest, PostFilterRequest, UserEditRequest, UserLoginRequest, UserStoreRequest};
 use App\Models\TemporaryFile;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
-use Inertia\Response;
-use Inertia\ResponseFactory;
+use Inertia\{Inertia, Response, ResponseFactory};
+use LibDNS\Records\Resource;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Throwable;
 
 class UserController extends Controller
 {
+
+    /**
+     * @param User $user
+     * @param PostFilterRequest $request
+     * @return Response|ResponseFactory
+     * @throws Throwable
+     */
+    public function index(User $user, PostFilterRequest $request) : Response|ResponseFactory
+    {
+        return inertia('User/Index', [
+            'user' => Inertia::once(function () use ($user) {
+                unset($user->email, $user->created_at, $user->updated_at);
+                $user->load('getAllMedia');
+                $user->setRelation('profilePicture', $user->getAllMedia->firstWhere('collection_name', 'avatar'));
+                $user->setRelation('bannerPicture', $user->getAllMedia->firstWhere('collection_name', 'banner'));
+
+                return new UserResource($user);
+            }),
+            'posts' => PostController::getFilteredPosts($request->merge(['user_id' => $user->id]))
+        ]);
+    }
+
     public function login(UserLoginRequest $request) : RedirectResponse
     {
         $credentials = $request->validated();
         if (auth()->attempt($credentials)) {
             $request->session()->regenerate();
-            return redirect()->route('home');
+            return redirect()->route('index');
         }
 
         return redirect()->back()->withErrors([
@@ -43,13 +69,12 @@ class UserController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            if ($validated['avatar'] !== null) {
+            if (!empty($validated['avatar'])) {
                 $tempFile = TemporaryFile::where('folder', $validated['avatar'])->first();
-                $user->addMedia(
-                    storage_path('app/public/avatar/tmp/' . $validated['avatar'] . '/' . $tempFile->filename)
-                )
+                $user->clearMediaCollection('avatar');
+                $user->addMediaFromDisk(
+                    sprintf('avatar/tmp/%s/%s', $validated['avatar'], $tempFile->filename), 'public')
                     ->toMediaCollection('avatar');
-                rmdir(storage_path('app/public/avatar/tmp/' . $validated['avatar']));
                 $tempFile->delete();
             }
         });
@@ -59,31 +84,11 @@ class UserController extends Controller
                 'password' => $validated['password'],
             ])
         ) {
-            return redirect()->to(route('home'));
+            return redirect()->to(route('index'));
         }
 
         return back();
     }
-
-    public function profile(string $username) : Response|ResponseFactory
-    {
-        return inertia('profile', [
-            'user' => User::where('username', $username)
-            ->with('media')
-            ->select('id', 'username')
-            ->first()
-        ]);
-    }
-
-    /**public function index(string $username) : JsonResponse
-    {
-        return response()->json(
-            User::where('username', $username)
-                ->with('media')
-                ->select('id')
-                ->first()
-        );
-    }*/
 
     /**
      * @return Response|ResponseFactory
@@ -95,7 +100,8 @@ class UserController extends Controller
             ->select('id', 'name', 'username', 'email')
             ->first();
         abort_unless($user->id === auth()->id(), 403);
-        return inertia('update-profile', ['user' => $user]);
+
+        return inertia('UpdateProfile', ['user' => $user]);
     }
 
     public function updateProfile(User $user, UserEditRequest $request) : RedirectResponse
@@ -119,10 +125,25 @@ class UserController extends Controller
         return back();
     }
 
+    /**
+     * @throws Throwable
+     */
     public function destroy(User $user) : RedirectResponse
     {
         abort_unless($user->id === auth()->id(), 403);
-        $user->delete();
+        DB::transaction(function () use ($user) {
+            Comment::where('user_id', $user->id)
+                ->orWhere('post_id', $user->id)
+                ->delete();
+            Post::where('user_id', $user->id)->delete();
+            Message::where('chat_id', 'in', function () use ($user) {
+                return Chat::where('user_id_1', $user->id)->orWhere('user_id_2', $user->id)->toArray();
+            })->delete();
+            Chat::where('user_id_1', $user->id)->orWhere('user_id_2', $user->id)->delete();
+
+            $user->delete();
+        });
+
         return back();
     }
 
@@ -131,7 +152,8 @@ class UserController extends Controller
         auth()->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return back(route('home'));
+
+        return back();
     }
 
     public function storeImage(ImagePostRequest $request) : string
@@ -140,7 +162,7 @@ class UserController extends Controller
         foreach (array_filter($request->validated()) as $key => $value) {
             $file     = $request->file($key);
             $filename = $file->getClientOriginalName();
-            $folder   = uniqid() . '-' . now()->timestamp;
+            $folder   = sprintf('%s-%s', uniqid(), now()->timestamp);
             $file->storeAs('/public/' . $key . '/tmp/' . $folder, $filename);
 
             TemporaryFile::create([

@@ -1,67 +1,60 @@
 <template>
-    <div class="container">
-        <h3>Comments</h3>
-        <div v-if="$page.props.auth.login" class="d-block">
-            <form @submit.prevent class="commentForm">
-                <div class="form-floating">
-                    <textarea id="new-comment" v-model="form.comment" placeholder="Comment" class="form-control" minlength="4"></textarea>
-                    <label for="new-comment">Add a Comment</label>
-                    <div v-if="form.errors.comment" class="alert-danger">
-                        <ul>
-                            <li>{{ form.errors.comment }}</li>
-                        </ul>
-                    </div>
+    <div v-if="$page.props.auth.login" class="d-block">
+        <form @submit.prevent class="commentForm">
+            <div class="form-floating">
+                <textarea id="new-comment" v-model="form.comment" placeholder="Comment" class="form-control" minlength="4"></textarea>
+                <label for="new-comment">Add a Comment</label>
+                <div v-if="form.errors.comment" class="alert-danger">
+                    <ul>
+                        <li>{{ form.errors.comment }}</li>
+                    </ul>
                 </div>
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button class="btn button-dark float-end" :disabled="Object.keys(form.comment).length < 4 || form.processing" v-on:click="setComment">Submit</button>
-                </div>
-            </form>
-        </div>
-        <page-loader v-if="!comments.data"/>
-        <div v-if="comments.data < 1" class="empty-comments mt-3">
-            <h4>There are no comments yet</h4>
-        </div>
-        <div v-if="comments.data" :key="comment.id"
-            v-for="(comment, index) in comments.data">
-            <hr>
-            <p id="user-comment">{{ comment.comment }}</p>
-            <div v-if="$page.props.auth.user.id === comment.user.id" class="commentForm">
-               <form @submit.prevent class="edit-form form-floating">
-                    <textarea id="edit-comment" class="form-control" rows="4" minlength="4" placeholder="Edit Comment">{{ comment.comment }}</textarea>
-                    <label id="editCommentLabel" for="edit-comment">Edit Comment</label>
-                    <div class="buttons">
-                        <button id="update" class="btn btn-primary" @click="updateComment(index, $event)">Update Comment</button>
-                        <button id="cancel" class="btn btn-primary" @click="cancelComment(index, $event)">Cancel</button>
-                        <button id="edit" class="btn btn-primary" @click="openForm">Edit Comment</button>
-                        <button id="delete" class="btn btn-danger" @click="deleteComment(index)">Delete Comment</button>
-                    </div>
-               </form>
             </div>
-            <inertia-link :href="route('user.profile', comment.user.username)">
-                {{ comment.user.username }}
-            </inertia-link>
-            <p>{{ this.formatDate(comment.created_at) }}</p>
-        </div>
-        <pagination v-if="comments.links" :links="comments.links" @nextPage="getComments($event)"></pagination>
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                <button class="btn button-dark float-end" :disabled="Object.keys(form.comment).length < 4 || form.processing" v-on:click="setComment">Submit</button>
+            </div>
+        </form>
     </div>
+    <div v-if="comments.data < 1" class="empty-comments mt-3">
+        <h4>There are no comments yet</h4>
+    </div>
+    <div v-if="comments.data" :key="comment.id"
+        v-for="(comment, index) in comments.data">
+        <hr>
+        <p id="user-comment">{{ comment.comment }}</p>
+        <div v-if="$page.props.auth.user.id === comment.user.id" class="commentForm">
+           <form @submit.prevent class="edit-form form-floating">
+                <textarea id="edit-comment" class="form-control" rows="4" minlength="4" placeholder="Edit Comment">{{ comment.comment }}</textarea>
+                <label id="editCommentLabel" for="edit-comment">Edit Comment</label>
+                <div class="buttons">
+                    <button id="update" class="btn btn-primary" @click="updateComment(index, $event)">Update Comment</button>
+                    <button id="cancel" class="btn btn-primary" @click="cancelComment(index, $event)">Cancel</button>
+                    <button id="edit" class="btn btn-primary" @click="openForm">Edit Comment</button>
+                    <button id="delete" class="btn btn-danger" @click="deleteComment(index)">Delete Comment</button>
+                </div>
+           </form>
+        </div>
+        <inertia-link :href="route('user.index', comment.user.username, { user_id: comment.user.id })">
+            {{ comment.user.username }}
+        </inertia-link>
+        <p>{{ this.formatDate(comment.createdAt) }}</p>
+    </div>
+    <pagination v-if="comments.meta" :links="comments.meta" @nextPage="getComments($event)"></pagination>
 </template>
 
 <script>
-import pageLoader from "./PageLoader.vue";
-import { useForm } from "@inertiajs/vue3"
-import Pagination from "../layout/pagination.vue";
-import { usePage } from '@inertiajs/vue3'
+import { useForm, usePage } from "@inertiajs/vue3"
+import Pagination from "../layout/Pagination.vue";
 import { computed } from 'vue';
 import moment from "moment";
 export default {
     name: "Comment",
     components:{
-      pageLoader,
       Pagination
     },
     props:{
-      id: {
-          required: true
+      comments: {
+          required: false
       }
     },
     data(){
@@ -71,7 +64,6 @@ export default {
             post_id : this.id
         });
       return {
-          comments: [],
           date: 0,
           disabled: Boolean,
           success: {},
@@ -190,7 +182,7 @@ export default {
       }
     },
       mounted() {
-        this.getComments('/comment/view/' + this.id);
+       // this.getComments(route('comment.index', this.id));
     }
 };
 </script>

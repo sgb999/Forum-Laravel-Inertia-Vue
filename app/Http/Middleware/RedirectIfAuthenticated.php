@@ -9,8 +9,9 @@ use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
+//use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpFoundation\Response;
 
 class RedirectIfAuthenticated
 {
@@ -20,16 +21,14 @@ class RedirectIfAuthenticated
      * @param Request $request ): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse) $next
      * @param Closure $next
      * @param string|null ...$guards
-     * @return RedirectResponse|Response
+     * @return Response
      */
-    public function handle(Request $request, Closure $next, string ...$guards): RedirectResponse|Response
+    public function handle(Request $request, Closure $next, string ...$guards): Response
     {
         $guards = empty($guards) ? [null] : $guards;
 
-        foreach ($guards as $guard) {
-            if (Auth::guard($guard)->check()) {
-                return redirect($this->redirectTo($request));
-            }
+        if (array_any($guards, fn($guard) => Auth::guard($guard)->check())) {
+            return redirect($this->redirectTo($request));
         }
 
         return $next($request);
