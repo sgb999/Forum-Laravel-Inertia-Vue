@@ -3,7 +3,7 @@
     <navigation-bar />
     <div class="container w-75">
         <div class="user m-auto text-center">
-            <img class="avatar d-block mx-auto" :src="user.profilePicture.thumb ? user.profilePicture.thumb : '/storage/default/avatar.png'" alt="avatar">
+            <img class="avatar d-block mx-auto" :src="user?.profilePicture?.thumb ? user.profilePicture.thumb : '/storage/default/avatar.png'" alt="avatar">
             <inertia-link :href="route('user.profile', user.username)">
                 {{user.username}}
             </inertia-link>
@@ -38,7 +38,7 @@ import { useForm } from "@inertiajs/vue3";
 import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
 export default {
-    name: "message",
+    name: "Message",
     components: {
         NavigationBar,
         Footer
@@ -74,7 +74,13 @@ export default {
             })
         },
         getChats(){
-            axios.get(route('message.index', this.id)).then((response) => {
+            axios.get(route('message.index', this.id), {
+                'headers': {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': this.$page.props.csrf,
+                    'Accept': 'application/json',
+                }
+            }).then((response) => {
                 this.messages = response.data;
                 this.scrollToBottom();
             }).catch((error) => {
@@ -83,6 +89,11 @@ export default {
         },
         sendMessage(){
             this.form.post(route('message.store'), {
+                'headers': {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'X-CSRF-TOKEN': this.$page.props.csrf,
+                    'Accept': 'application/json',
+                }}, {
                 onSuccess: () => {
                     this.form.message = '';
                 }
@@ -92,7 +103,7 @@ export default {
     mounted() {
         window.setInterval(() => {
             this.getChats()
-        }, 1000);
+        }, 5000);
     }
 };
 </script>

@@ -9,7 +9,6 @@ use App\Http\Resources\UserResource;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Response;
 use Inertia\ResponseFactory;
@@ -21,7 +20,7 @@ class ChatController extends Controller
     public function store(User $user) : Response|ResponseFactory
     {
         return inertia(
-            'message',
+            'Message',
             [
                 'chat' => Chat::create([
                     'user_id_1' => auth()->id(),
@@ -33,7 +32,7 @@ class ChatController extends Controller
 
     public function getChats() : Response|ResponseFactory
     {
-        return inertia('chat', [
+        return inertia('Chat', [
             'chats' => array_merge(DB::table('users')
             ->join('chats', 'chats.user_id_2', '=', 'users.id')
             ->select('users.username', 'users.id')
@@ -49,28 +48,27 @@ class ChatController extends Controller
         );
     }
 
-    public function show(int $id) : Response|ResponseFactory
+    public function show(User $user) : Response|ResponseFactory
     {
         $chat = Chat::where([
-            ['user_id_1', $id],
+            ['user_id_1', $user->id],
             ['user_id_2', auth()->id()],
-        ])
-        ->orWhere([
+        ])->orWhere([
             ['user_id_1', auth()->id()],
-            ['user_id_2', $id],
+            ['user_id_2', $user->id],
         ])->first();
 
         if (! $chat) {
             $chat = Chat::create([
                 'user_id_1' => auth()->id(),
-                'user_id_2' => $id,
+                'user_id_2' => $user->id,
             ]);
         }
-        return inertia('message', [
+        return inertia('Message', [
             'id'       => $chat->id,
             'user'     => new UserResource(User::with('profilePicture')
                 ->select('id', 'username')
-                ->find($id)),
+                ->find($user->id)),
             'messages' => MessageResource::collection(
                 Message::where('chat_id', $chat->id)
                 ->with('user:id,username')

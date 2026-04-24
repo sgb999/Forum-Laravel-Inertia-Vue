@@ -6,25 +6,25 @@
            v-for="topic in topics"
             class="card">
                 <div class="card-header">
-                    <inertia-link :href="route('post.show', topic.id)">
+                    <inertia-link :href="route('post.index', topic.id)">
                         <h3>{{topic.title}}</h3>
                     </inertia-link>
                 </div>
                 <div class="card-body">
-                    <inertia-link :href="route('user.profile', topic.user.username)">
+                    <inertia-link :href="route('user.index', topic.user.username, { user_id: topic.user.id })">
                         <p>{{topic.user.username}}</p>
                     </inertia-link>
-                    <inertia-link :href="route('topics.show', topic.category.id)">
+                    <inertia-link href="#">
                         <p>{{ topic.category.name }}</p>
                     </inertia-link>
-                    <p>{{ this.formatDate(topic.created_at) }}</p>
+                    <p>{{ this.formatDate(topic.createdAt) }}</p>
                 </div>
         </div>
     </div>
 </template>
 
 <script>
-import PageLoader from "./PageLoader.vue";
+import PageLoader from "../PageLoader.vue";
 import moment from "moment"
 export default {
     name: "viewTopics",

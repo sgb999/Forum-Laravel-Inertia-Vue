@@ -158,8 +158,8 @@
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import NavigationBar from "../../layout/NavigationBar.vue";
+import Footer from "../../layout/Footer.vue";
 
 import vueFilePond from "vue-filepond";
 
@@ -183,7 +183,7 @@ const FilePond = vueFilePond(
     FilePondPluginImageValidateSize
 );
 export default {
-    name: "update-profile",
+    name: "Update",
     components: {
         NavigationBar,
         Footer,

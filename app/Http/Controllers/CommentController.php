@@ -12,17 +12,6 @@ use Illuminate\Http\RedirectResponse;
 
 class CommentController extends Controller
 {
-    public function index(int $id) : JsonResponse
-    {
-        return response()->json(
-            Comment::with('user:id,username')
-                    ->select('id', 'comment', 'user_id', 'created_at')
-                    ->where('post_id', $id)
-                    ->orderBy('created_at', 'ASC')
-                    ->paginate(5)
-        );
-    }
-
     public function store(CommentStoreRequest $request) : RedirectResponse
     {
         $validated = $request->validated();

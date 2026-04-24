@@ -16,7 +16,7 @@
 import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
 export default {
-    name: "chat",
+    name: "Chat",
     components: {
         NavigationBar,
         Footer

@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\CommentController;
-use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -20,19 +19,15 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::inertia('/', 'LoadTitles', ['url' => '/view-all-topics/'])->name('home');
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/categories', [CategoryController::class, 'index'])->name('categories.show');
 Route::post('/tmp/image', [UserController::class, 'storeImage']);
 Route::controller(PostController::class)->group(function () {
-    Route::get('/view-all-topics/', 'viewAllTopics');
-    Route::get('/view-topics/{id}', 'viewTopics')->name('topics.show');
-    Route::get('/view-topics-ajax/{id}', 'viewTopicsAjax');
-    Route::get('/view-profile-posts/{id}', 'getProfilePosts');
-    Route::get('/view-post/{id}', 'viewPost')->name('post.show');
+    Route::name('post.')->group(function () {
+        Route::get('/', 'show',)->name('show');
+        Route::get('/view-post/{post}', 'index')->name('index');
+    });
 });
-Route::get('/comment/view/{id}', [CommentController::class, 'index'])->name('comment.index');
-Route::get('user/profile/{username}', [UserController::class, 'profile'])->name('user.profile');
-//Route::get('/profile/user-posts/{id}', [UserController::class, 'getUserPosts']);
+Route::get('user/profile/{user:username}', [UserController::class, 'index'])->name('user.index');
 
 Route::middleware(['auth'])->group(function () {
     Route::controller(CommentController::class)
@@ -52,20 +47,25 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.index');
     Route::get('/message/user/{user}', [ChatController::class, 'show'])->name('chat.show');
-    Route::post('/message', [MessageController::class, 'store'])->name('message.store');
-    Route::get('/message{chat}', [MessageController::class, 'index'])->name('message.index');
+
 
     //Post routing
     Route::prefix('/post')->controller(PostController::class)->group(function () {
-        Route::get('/{post?}', 'postPage')->name('post.index');
-        Route::put('/{post?}', 'upsert')->name('post.store');
-        Route::delete('/{post}', 'destroy')->name('post.destroy');
+        Route::name('post.')->group(function () {
+            Route::get('/{post?}', 'createPostPage')->name('index');
+            Route::put('/{post?}', 'upsert')->name('store');
+            Route::delete('/{post}', 'destroy')->name('destroy');
+        });
     });
 });
 
 Route::middleware(['guest'])->controller(UserController::class)->group(function () {
-    Route::inertia('/login', 'Login')->name('login.index');
-    Route::post('/login', 'login')->name('login.post');
-    Route::post('/register', 'register')->name('register.post');
-    Route::inertia('/register', 'Register')->name('register.index');
+    Route::name('login.')->group(function () {
+        Route::inertia('/login', 'User/Login')->name('index');
+        Route::post('/login', 'login')->name('post');
+    });
+    Route::name('register.')->group(function () {
+        Route::post('/register', 'register')->name('post');
+        Route::inertia('/register', 'User/Register')->name('index');
+    });
 });

@@ -21,6 +21,7 @@ class UserResource extends JsonResource
             'createdAt'       => $this->created_at,
             'updatedAt'       => $this->updated_at,
             'profilePicture' => new MediaResource($this->whenLoaded('profilePicture')),
+            'bannerPicture' => new MediaResource($this->whenLoaded('bannerPicture')),
         ];
     }
 }
