@@ -10,7 +10,9 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Routing\Redirector;
 use Illuminate\Support\Facades\Auth;
+use Inertia\Inertia;
 
 class RedirectIfAuthenticated
 {
@@ -20,9 +22,9 @@ class RedirectIfAuthenticated
      * @param Request $request ): (\Illuminate\Http\Response|\Illuminate\Http\RedirectResponse) $next
      * @param Closure $next
      * @param string|null ...$guards
-     * @return RedirectResponse|Response
+     * @return RedirectResponse|Redirector|mixed
      */
-    public function handle(Request $request, Closure $next, string ...$guards): RedirectResponse|Response
+    public function handle(Request $request, Closure $next, string ...$guards)
     {
         $guards = empty($guards) ? [null] : $guards;
 
