@@ -3,7 +3,7 @@
         <ul class="pagination desktop">
             <li class="page-item" v-for="link in links">
                 <button v-if="link.url" @click="$emit('nextPage', link.url)"
-                        :class="{'page-link' :  link.url, 'font-bold' : link.active}">
+                        :class="{'btn button-dark' :  link.url, 'font-bold' : link.active}">
                     {{ link.label}}
                 </button>
             </li>
@@ -17,7 +17,7 @@
             </li>
             <li class="page-item">
                 <button v-if="links[links.length - 1].url" @click="$emit('nextPage', links[links.length - 1].url)"
-                        :class="{'page-link' :  links[links.length - 1].url, 'font-bold' : links[links.length - 1].active}">
+                        :class="{'btn button-dark' :  links[links.length - 1].url, 'font-bold' : links[links.length - 1].active}">
                     {{ links[links.length - 1].label}}
                 </button>
             </li>
