@@ -1,7 +1,7 @@
 <template>
     <Head><title>Login</title></Head>
     <navigation-bar />
-    <div class="container w-50">
+    <div class="container">
         <div class="card">
             <div class="card-header">
                 <h1>Login</h1>
@@ -72,6 +72,9 @@ export default {
 </script>
 
 <style scoped lang="sass">
+@media (min-device-width: 768px)
+    .container
+        width: 50%
 .card
     background: #242220
     color: #fff
