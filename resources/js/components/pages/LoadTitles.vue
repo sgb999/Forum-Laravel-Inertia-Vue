@@ -6,8 +6,8 @@
             <inertia-link v-if="$page.props.auth.login" class="btn button-dark col-2" href="/post/">Make a Post</inertia-link>
         </div>
         <hr>
-        <view-topics :topics="topics.data"/>
-        <pagination v-if="topics.links" :links="topics.links" @nextPage="getTopics($event)"></pagination>
+        <view-topics :topics="posts.data"/>
+        <pagination v-if="posts.meta" :links="posts.meta.links"></pagination>
     </div>
     <Footer />
 </template>
@@ -17,6 +17,7 @@ import viewTopics from "./viewTopics.vue";
 import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
 import Pagination from "../layout/pagination.vue";
+import { router } from '@inertiajs/vue3'
 export default {
     name: "LoadTitles",
     components:{
@@ -26,28 +27,10 @@ export default {
         Pagination
     },
     props:{
-        url: {
-            type: String,
+        posts: {
+            type: Object,
             required: true
         }
-    },
-    data(){
-        return{
-            topics: {}
-        }
-    },
-    methods: {
-        getTopics(site) {
-            this.topics.data = null;
-            axios.get(site).then((response) => {
-                    this.topics = response.data;
-                }).catch((error) => {
-                console.log('Error: ' + error);
-            });
-        }
-    },
-    mounted() {
-        this.getTopics(this.url);
     }
 };
 </script>

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ImagePostRequest;
+use App\Http\Requests\PostFilterRequest;
 use App\Http\Requests\UserEditRequest;
 use App\Http\Requests\UserLoginRequest;
 use App\Http\Requests\UserStoreRequest;
@@ -12,10 +13,12 @@ use App\Models\TemporaryFile;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Response;
 use Inertia\ResponseFactory;
+use Throwable;
 
 class UserController extends Controller
 {
@@ -24,6 +27,7 @@ class UserController extends Controller
         $credentials = $request->validated();
         if (auth()->attempt($credentials)) {
             $request->session()->regenerate();
+
             return redirect()->route('home');
         }
 
@@ -47,8 +51,7 @@ class UserController extends Controller
                 $tempFile = TemporaryFile::where('folder', $validated['avatar'])->first();
                 $user->addMedia(
                     storage_path('app/public/avatar/tmp/' . $validated['avatar'] . '/' . $tempFile->filename)
-                )
-                    ->toMediaCollection('avatar');
+                )->toMediaCollection('avatar');
                 rmdir(storage_path('app/public/avatar/tmp/' . $validated['avatar']));
                 $tempFile->delete();
             }
@@ -65,36 +68,38 @@ class UserController extends Controller
         return back();
     }
 
-    public function profile(string $username) : Response|ResponseFactory
+    /**
+     * @param string $username
+     * @param PostFilterRequest $request
+     *
+     * @return Response|ResponseFactory
+     *
+     * @throws Throwable
+     */
+    public function profile(string $username, PostFilterRequest $request) : Response|ResponseFactory
     {
-        return inertia('profile', [
-            'user' => User::where('username', $username)
+        $user = User::where('username', $username)
             ->with('media')
             ->select('id', 'username')
-            ->first()
-        ]);
-    }
-
-    /**public function index(string $username) : JsonResponse
-    {
-        return response()->json(
-            User::where('username', $username)
-                ->with('media')
-                ->select('id')
-                ->first()
+            ->firstOrFail();
+        return inertia('profile', [
+                'user' => $user,
+                'posts' => PostController::getFilteredPosts($request->merge(['user_id' => $user->id]))
+            ]
         );
-    }*/
+    }
 
     /**
      * @return Response|ResponseFactory
      */
     public function updateProfilePage() : Response|ResponseFactory
     {
-        $user = User::where('id', auth()->id())
-            ->with('media')
+        $user = User::with('media')
             ->select('id', 'name', 'username', 'email')
-            ->first();
+            ->findOrFail(auth()->id());
+
         abort_unless($user->id === auth()->id(), 403);
+
         return inertia('update-profile', ['user' => $user]);
     }
 
@@ -116,6 +121,7 @@ class UserController extends Controller
         }
         $user->update($validated);
         $user->save();
+
         return back();
     }
 
@@ -123,15 +129,17 @@ class UserController extends Controller
     {
         abort_unless($user->id === auth()->id(), 403);
         $user->delete();
+
         return back();
     }
 
     public function logOutMethod(Request $request) : RedirectResponse
     {
-        auth()->logout();
+        Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
-        return back(route('home'));
+
+        return redirect(route('home'));
     }
 
     public function storeImage(ImagePostRequest $request) : string
@@ -148,6 +156,7 @@ class UserController extends Controller
                 'filename' => $filename,
             ]);
         }
+
         return $folder;
     }
 }

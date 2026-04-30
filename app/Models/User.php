@@ -4,15 +4,12 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-//use App\Http\Traits\DateTrait;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\MorphOne;
+use Illuminate\Database\Eloquent\Relations\{ HasMany, MorphMany, MorphOne };
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-use Spatie\MediaLibrary\HasMedia;
-use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\{ HasMedia, InteractsWithMedia };
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
 class User extends Authenticatable implements HasMedia
@@ -21,7 +18,6 @@ class User extends Authenticatable implements HasMedia
     use HasFactory;
     use InteractsWithMedia;
     use Notifiable;
-  //  use DateTrait;
 
     protected $fillable = [
         'name',
@@ -39,11 +35,19 @@ class User extends Authenticatable implements HasMedia
         'email_verified_at' => 'datetime',
     ];
 
+    /**
+     * @return HasMany
+     */
     public function post() : HasMany
     {
         return $this->hasMany(Post::class);
     }
 
+    /**
+     * @param Media|null $media
+     *
+     * @return void
+     */
     public function registerMediaConversions(?Media $media = null) : void
     {
         $this->addMediaConversion('thumb')
@@ -52,9 +56,36 @@ class User extends Authenticatable implements HasMedia
             ->sharpen(10);
     }
 
+    /**
+     * Return the profile picture associated with the user.
+     *
+     * @return MorphOne
+     */
     public function profilePicture(): MorphOne
     {
         return $this->morphOne(Media::class, 'model')
-            ->where('collection_name', 'avatar');
+            ->where('collection_name', '=', 'avatar');
+    }
+
+    /**
+     * Return the banner picture associated with the user.
+     *
+     * @return MorphOne
+     */
+    public function bannerPicture(): MorphOne
+    {
+        return $this->morphOne(Media::class, 'model')
+            ->where('collection_name', '=', 'banner');
+    }
+
+    /**
+     * Returns all media associated with the user.
+     *
+     * @return MorphMany
+     */
+    public function getAllMedia(): MorphMany
+    {
+        return $this->morphMany(Media::class, 'model')
+            ->whereIn('collection_name', ['avatar', 'banner']);
     }
 }

@@ -5,27 +5,24 @@
         <div v-if="topics"
            v-for="topic in topics"
             class="card">
-                <div class="card-header">
-                    <inertia-link :href="route('post.show', topic.id)">
-                        <h3>{{topic.title}}</h3>
-                    </inertia-link>
-                </div>
-                <div class="card-body">
-                    <inertia-link :href="route('user.profile', topic.user.username)">
-                        <p>{{topic.user.username}}</p>
-                    </inertia-link>
-                    <inertia-link :href="route('topics.show', topic.category.id)">
-                        <p>{{ topic.category.name }}</p>
-                    </inertia-link>
-                    <p>{{ this.formatDate(topic.created_at) }}</p>
-                </div>
+            <div class="card-header">
+                <inertia-link :href="route('post.show', topic.id)"><h3>{{topic.title}}</h3></inertia-link>
+            </div>
+            <div class="card-body">
+                <inertia-link :href="route('user.profile', topic.user.username)">
+                    <p>{{topic.user.username}}</p>
+                </inertia-link>
+                <inertia-link :href="route('home', { category_id : topic.category.id })">
+                    <p>{{ topic.category.name }}</p>
+                </inertia-link>
+                <p>{{ this.formatDate(topic.createdAt) }}</p>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
 import PageLoader from "./PageLoader.vue";
-import moment from "moment"
 export default {
     name: "viewTopics",
     components:{
@@ -36,13 +33,7 @@ export default {
             type: Array,
             required: false
         }
-    },
-  methods:{
-      formatDate(value)
-      {
-        return moment(String(value)).format('DD/MM/YYYY H:MM a')
-      }
-  }
+    }
 };
 </script>
 
