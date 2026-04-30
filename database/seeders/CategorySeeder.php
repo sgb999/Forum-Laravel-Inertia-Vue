@@ -22,13 +22,13 @@ class CategorySeeder extends Seeder
             around stealth operations, selective violence, and the assassination of those deemed to be perpetrators of
             oppression under the belief that this minimizes collateral damage in accordance with their absolute
             prohibition against harming innocent lives.',
-        ]);
-        DB::table('categories')->insert([
-            'name'        => 'Templar\'s',
-            'description' => 'The Templar Order, also known as the Order of the Knights Templar or the Poor
+            [
+                'name'        => 'Templar\'s',
+                'description' => 'The Templar Order, also known as the Order of the Knights Templar or the Poor
             Fellow-Soldiers of Christ and the Temple of Solomon, is a secret transnational organization which for
             thousands of years has striven to seize control of humanity in the name of uplifting their condition and
             inaugurating lasting, world peace.',
+            ]
         ]);
     }
 }

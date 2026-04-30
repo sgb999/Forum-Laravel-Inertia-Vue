@@ -20,25 +20,17 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::inertia('/', 'LoadTitles', ['url' => '/view-all-topics/'])->name('home');
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
 Route::post('/tmp/image', [UserController::class, 'storeImage']);
 Route::controller(PostController::class)->group(function () {
-    Route::get('/view-all-topics/', 'viewAllTopics');
-    Route::get('/view-topics/{id}', 'viewTopics')->name('topics.show');
-    Route::get('/view-topics-ajax/{id}', 'viewTopicsAjax');
-    Route::get('/view-profile-posts/{id}', 'getProfilePosts');
-    Route::get('/view-post/{id}', 'viewPost')->name('post.show');
+    Route::get('/', 'show' )->name('home');
+    Route::get('/view-post/{post}', 'index')->name('post.show');
 });
-Route::get('/comment/view/{id}', [CommentController::class, 'index'])->name('comment.index');
 Route::get('user/profile/{username}', [UserController::class, 'profile'])->name('user.profile');
-//Route::get('/profile/user-posts/{id}', [UserController::class, 'getUserPosts']);
 
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth:sanctum'])->group(function () {
     Route::controller(CommentController::class)
         ->prefix('/comment')->group(function () {
-            Route::post('/', 'store')->name('comment.store');
-            Route::put('/{comment}', 'edit')->name('comment.edit');
             Route::delete('/{comment}', 'destroy')->name('comment.destroy');
         });
     Route::controller(UserController::class)
@@ -46,14 +38,12 @@ Route::middleware(['auth'])->group(function () {
             Route::get('/log-out', 'logOutMethod')->name('log-out');
             Route::get('/profile/update/', 'updateProfilePage')->name('user.update-profile');
             Route::match(['post', 'put'], '/profile/update/{user}', 'updateProfile')->name('user.edit');
-            Route::delete('/profile/update{user}', 'destroy')->name('user.destroy');
-          //  Route::get('/user/{user:username}', 'index')->name('user.profile');
+            Route::delete('/profile/update/{user}', 'destroy')->name('user.destroy');
         });
 
     Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.index');
     Route::get('/message/user/{user}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/message', [MessageController::class, 'store'])->name('message.store');
-    Route::get('/message{chat}', [MessageController::class, 'index'])->name('message.index');
 
     //Post routing
     Route::prefix('/post')->controller(PostController::class)->group(function () {

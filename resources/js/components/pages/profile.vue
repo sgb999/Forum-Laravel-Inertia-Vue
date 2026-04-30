@@ -19,7 +19,7 @@
             <h4>There are no posts yet</h4>
         </div>
     </div>
-    <pagination v-if="posts.links" class="container" :links="posts.links" @nextPage="getTopics($event)"></pagination>
+    <pagination v-if="posts.meta.links" class="container" :links="posts.meta.links" @nextPage="getTopics($event)"></pagination>
     <Footer />
 </template>
 
@@ -28,10 +28,16 @@ import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
 import ViewTopics from "./viewTopics.vue";
 import Pagination from "../layout/pagination.vue";
+import {router} from "@inertiajs/vue3";
 export default {
     name: "profile",
     props: {
         user: {
+            type: Object,
+            required: true
+        },
+        posts: {
+            type: Object,
             required: true
         }
     },
@@ -44,21 +50,15 @@ export default {
     data() {
         return {
             banner: '',
-            avatar: '',
-            posts: [],
+            avatar: ''
         }
     },
     methods: {
         getTopics(site) {
-            axios.get(site).then((response) => {
-                this.posts = response.data;
-            }).catch((error) => {
-                console.log('Error: ' + error);
-            });
+            router.get(site);
         }
     },
     mounted() {
-        this.getTopics('/view-profile-posts/' + this.user.id);
         this.user.media.forEach(el => {
             if(el.collection_name === 'banner'){
                 this.banner = el.original_url;

@@ -3,7 +3,7 @@
     <navigation-bar />
     <div class="container w-75">
         <div class="user m-auto text-center">
-            <img class="avatar d-block mx-auto" :src="user.profilePicture.thumb ? user.profilePicture.thumb : '/storage/default/avatar.png'" alt="avatar">
+            <img class="avatar d-block mx-auto" :src="user.profilePicture?.thumb || '/storage/default/avatar.png'" alt="avatar">
             <inertia-link :href="route('user.profile', user.username)">
                 {{user.username}}
             </inertia-link>
@@ -92,7 +92,7 @@ export default {
     mounted() {
         window.setInterval(() => {
             this.getChats()
-        }, 1000);
+        }, 5000);
     }
 };
 </script>

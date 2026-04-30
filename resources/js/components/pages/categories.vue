@@ -5,7 +5,7 @@
         <h2>Categories</h2>
         <hr>
         <inertia-link v-for="category in categories"
-           :href="'/view-topics/' + category.id">
+           :href="route('home',{ category_id: category.id})">
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
         </inertia-link>

@@ -4,49 +4,66 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\CommentEditRequest;
-use App\Http\Requests\CommentStoreRequest;
-use App\Models\Comment;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
+use App\Http\Requests\{CommentStoreRequest, CommentEditRequest};
+use App\Models\{Comment, Post};
+use Illuminate\Http\{JsonResponse, RedirectResponse};
 
 class CommentController extends Controller
 {
-    public function index(int $id) : JsonResponse
-    {
-        return response()->json(
-            Comment::with('user:id,username')
-                    ->select('id', 'comment', 'user_id', 'created_at')
-                    ->where('post_id', $id)
-                    ->orderBy('created_at', 'ASC')
-                    ->paginate(5)
-        );
-    }
-
-    public function store(CommentStoreRequest $request) : RedirectResponse
+    /**
+     * Add a comment to an existing post
+     *
+     * @param Post $post
+     * @param CommentStoreRequest $request
+     *
+     * @return JsonResponse
+     */
+    public function store(Post $post, CommentStoreRequest $request) : JsonResponse
     {
         $validated = $request->validated();
-        Comment::create([
+        $comment = Comment::create([
             'comment' => $validated['comment'],
-            'post_id' => $validated['post_id'],
+            'post_id' => $post->id,
             'user_id' => auth()->id(),
         ]);
-        return back();
+
+        return response()->json(
+            $comment->load(['user' => function ($query) {
+                    $query->select('id', 'username');
+            }])->toResource(), 201);
     }
 
-    public function edit(Comment $comment, CommentEditRequest $request) : RedirectResponse
+    /**
+     * Update a comment.
+     * If the user making the request does not match the original comment user id respond with a 403 error
+     * If the comment has not been edited, send an HTTP status code of 304.
+     *
+     * @param Comment $comment
+     * @param CommentEditRequest $request
+     *
+     * @return JsonResponse
+     */
+    public function edit(Comment $comment, CommentEditRequest $request) : JsonResponse
     {
-        abort_if($comment->user_id !== auth()->id(), 403);
-        $validated        = $request->validated();
-        $comment->comment = $validated['comment'];
+        $comment->comment = $request->validated()['comment'];
         $comment->save();
-        return back();
+
+        return response()->json($comment->load('user:id,username')->toResource());
     }
 
+    /**
+     * Delete a comment.
+     * If the user making the request does not match the original comment user id respond with a 403 error
+     *
+     * @param Comment $comment
+     *
+     * @return RedirectResponse
+     */
     public function destroy(Comment $comment) : RedirectResponse
     {
         abort_if($comment->user_id !== auth()->id(), 403);
         $comment->delete();
+
         return back();
     }
 }

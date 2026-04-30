@@ -1,24 +1,23 @@
 <template>
     <div class="container">
-        <h3>Comments</h3>
         <div v-if="$page.props.auth.login" class="d-block">
             <form @submit.prevent class="commentForm">
                 <div class="form-floating">
                     <textarea id="new-comment" v-model="form.comment" placeholder="Comment" class="form-control" minlength="4"></textarea>
                     <label for="new-comment">Add a Comment</label>
-                    <div v-if="form.errors.comment" class="alert-danger">
-                        <ul>
-                            <li>{{ form.errors.comment }}</li>
+                    <div v-if="form?.errors?.comment" class="alert alert-danger">
+                        <ul v-for="error in form.errors.comment">
+                            <li>{{ error }}</li>
                         </ul>
                     </div>
                 </div>
                 <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button class="btn button-dark float-end" :disabled="Object.keys(form.comment).length < 4 || form.processing" v-on:click="setComment">Submit</button>
+                    <button class="btn button-dark float-end" :disabled="Object(form.comment).length < 4 || form.processing" v-on:click="setComment">Submit</button>
                 </div>
             </form>
         </div>
         <page-loader v-if="!comments.data"/>
-        <div v-if="comments.data < 1" class="empty-comments mt-3">
+        <div v-if="comments.data.length < 1" class="empty-comments mt-3">
             <h4>There are no comments yet</h4>
         </div>
         <div v-if="comments.data" :key="comment.id"
@@ -40,9 +39,11 @@
             <inertia-link :href="route('user.profile', comment.user.username)">
                 {{ comment.user.username }}
             </inertia-link>
-            <p>{{ this.formatDate(comment.created_at) }}</p>
+            <p>{{ this.formatDate(comment.createdAt) }}</p>
         </div>
-        <pagination v-if="comments.links" :links="comments.links" @nextPage="getComments($event)"></pagination>
+        <div class="container mt-4">
+            <pagination v-if="comments.meta.links" :links="comments.meta.links"></pagination>
+        </div>
     </div>
 </template>
 
@@ -60,62 +61,59 @@ export default {
       Pagination
     },
     props:{
-      id: {
-          required: true
-      }
+        postId: {
+            type: Number,
+            required: true
+        },
+        comments: {
+            required: false
+        }
     },
     data(){
-        const form = useForm({
-            comment : '',
-            _token : computed(() => usePage().props.csrf),
-            post_id : this.id
-        });
-      return {
-          comments: [],
-          date: 0,
-          disabled: Boolean,
-          success: {},
-          form,
-          lastPaginationEvent: ''
-      }
+        return {
+            form: {
+                comment: '',
+                errors: {
+                    comment: null
+                }
+            },
+            disabled: Boolean
+        }
     },
     methods: {
-        getComments(site) {
-            this.lastPaginationEvent = site;
-            this.comments = [];
-            axios.get(site).then((response) => {
-                this.comments = response.data;
+        setComment() {
+            this.form.errors.comment = null;
+            axios.post(route('comment.store', {post: this.postId}), {
+                comment: this.form.comment
+            }).then((response) => {
+                if (response.status === 201) {
+                    this.comments.data.unshift(response.data);
+                    this.$swal({
+                        title: 'Your comment has been posted!',
+                        text: '',
+                        icon: 'success',
+                        timer: 3000
+                    });
+                    this.form.comment = '';
+                }
             }).catch((error) => {
-                console.log('Error: ' + error);
+                if (error.response?.status === 422) {
+                    this.form.errors.comment = error.response.data.errors.comment;
+                }
             });
-        },
-        setComment(){
-           this.form.post(route('comment.store'), {
-               onSuccess: () => {
-                   this.getComments(this.lastPaginationEvent);
-                   this.$swal({
-                       title: 'Your comment has been posted!',
-                       text: '',
-                       icon: 'success',
-                       timer: 3000
-                   });
-               }
-           });
-           this.form.comment = '';
         },
         cancelComment(index, event){
             const form = event.target.closest('.edit-form');
             form.querySelector("textarea").value = this.comments.data[index].comment;
             this.closeForm(event);
         },
-        updateComment(index, event){
-            const comment = useForm({
-                _token : this.$page.props.csrf,
-                comment: event.target.parentElement.parentElement.querySelector('textarea').value
-            });
-            this.$inertia.put(`/comment/${this.comments.data[index].id}`, comment, {
-                onSuccess: () => {
-                    this.comments.data[index].comment = comment.comment;
+        updateComment(index, event) {
+            axios.put(route('comment.edit', {comment: this.comments.data[index].id}),
+                {
+                    comment: event.target.parentElement.parentElement.querySelector('textarea').value
+                }).then((response) => {
+                if (response.status === 200) {
+                    this.comments.data[index] = response.data;
                     this.closeForm(event);
                     this.$swal({
                         title: 'Your comment has been updated!',
@@ -125,7 +123,6 @@ export default {
                     });
                 }
             });
-
         },
         deleteComment(index)
         {
@@ -137,23 +134,20 @@ export default {
                 showCancelButton: true,
                 dangerMode: true
             }).then((result) => {
-                    if(result.isConfirmed){
-                        this.$inertia.delete(`/comment/${this.comments.data[index].id}`, {
-                            onSuccess: () => {
-                                this.comments.data.splice(index, 1);
-                                this.$swal({
-                                    title: 'Your comment has been Deleted!',
-                                    text: '',
-                                    icon: 'success',
-                                    timer: 3000
-                                });
-                            }
+                if (!result.isConfirmed) {
+                    return false;
+                }
+                this.$inertia.delete(route('comment.destroy', { comment: this.comments.data[index].id }), {
+                    onSuccess: () => {
+                        this.comments.data.splice(index, 1);
+                        this.$swal({
+                            title: 'Your comment has been Deleted!',
+                            text: '',
+                            icon: 'success',
+                            timer: 3000
                         });
                     }
-                    else{
-                        return false;
-                    }
-
+                });
             });
         },
         openForm(event)
@@ -183,19 +177,17 @@ export default {
             // Show edit button and comment again
             parent.querySelector('#edit').style.display = 'block';
             parent.querySelector('#user-comment').style.display = 'block';
-        },
-      formatDate(value)
-      {
-        return moment(String(value)).format('DD/MM/YYYY H:MM a')
-      }
-    },
-      mounted() {
-        this.getComments('/comment/view/' + this.id);
+        }
     }
 };
 </script>
 
 <style scoped lang="sass">
+.pagination
+    display: flex
+    justify-content: center
+    list-style-type: none
+    padding: 0
 .commentForm
     #new-comment
         height: 100px
@@ -206,7 +198,7 @@ export default {
     label
         color: #6B6760
     #editCommentLabel
-            display: none
+        display: none
     textarea
         height: 100px
         background: #1b1a1f

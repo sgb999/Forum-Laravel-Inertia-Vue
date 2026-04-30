@@ -17,15 +17,18 @@
         "laravel/ui": "^4.6",
         "nuwave/lighthouse": "^6.64",
         "spatie/laravel-medialibrary": "^11.0",
-        "tightenco/ziggy": "^1.8"
+        "tightenco/ziggy": "^1.8",
+        "ext-pdo": "*"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",
+        "fruitcake/laravel-debugbar": "^4.2",
         "laravel/sail": "^1.52",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8",
         "opsway/psr12-strict-coding-standard": "^0.7.0",
-        "phpunit/phpunit": "^11.5",
+        "pestphp/pest": "^4.4",
+        "pestphp/pest-plugin-browser": "^4.3",
         "spatie/laravel-ignition": "^2.9"
     },
     "autoload": {
@@ -67,7 +70,8 @@
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
-            "dealerdirect/phpcodesniffer-composer-installer": true
+            "dealerdirect/phpcodesniffer-composer-installer": true,
+            "pestphp/pest-plugin": true
         }
     },
     "minimum-stability": "stable",
