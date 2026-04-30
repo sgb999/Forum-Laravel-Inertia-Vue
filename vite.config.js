@@ -32,4 +32,7 @@ export default defineConfig({
             port: 5173,
         },
     },
+    build: {
+        target: 'es2022'
+    }
 });
