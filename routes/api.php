@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\MessageController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -21,4 +22,6 @@ Route::middleware(['web', 'auth:sanctum'])->group(function () {
         Route::post('/{post}', 'store')->name('comment.store');
         Route::put('/{comment}', 'edit')->name('comment.edit');
     });
+
+    Route::get('/message/{chat}', [MessageController::class, 'index'])->name('message.index');
 });

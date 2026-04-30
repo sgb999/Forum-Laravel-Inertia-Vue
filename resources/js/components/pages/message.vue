@@ -92,7 +92,7 @@ export default {
     mounted() {
         window.setInterval(() => {
             this.getChats()
-        }, 1000);
+        }, 5000);
     }
 };
 </script>

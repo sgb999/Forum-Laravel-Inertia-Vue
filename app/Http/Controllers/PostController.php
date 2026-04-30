@@ -110,14 +110,13 @@ class PostController extends Controller
     /**
      * @param Post $post
      *
-     * @return Response|ResponseFactory
+     * @return RedirectResponse
      */
-    public function destroy(Post $post) : Response|ResponseFactory
+    public function destroy(Post $post) : RedirectResponse
     {
         abort_unless($post->user_id === auth()->id(), 403);
-        $id = $post->category_id;
         $post->delete();
 
-        return $this->viewTopics($id);
+        return redirect()->route('home');
     }
 }

@@ -73,7 +73,7 @@ export default {
                 dangerMode: true
             }).then((result) => {
                 if(result.isConfirmed){
-                    this.form.delete(route('post.destroy', this.post.id));
+                    this.form.delete(route('post.destroy', { post: this.post.data.id }));
                 }
                 else{
                     return false;

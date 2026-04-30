@@ -44,7 +44,6 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.index');
     Route::get('/message/user/{user}', [ChatController::class, 'show'])->name('chat.show');
     Route::post('/message', [MessageController::class, 'store'])->name('message.store');
-    Route::get('/message/{chat}', [MessageController::class, 'index'])->name('message.index');
 
     //Post routing
     Route::prefix('/post')->controller(PostController::class)->group(function () {
