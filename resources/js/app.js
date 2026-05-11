@@ -33,6 +33,6 @@ createInertiaApp({
         }
         app.mount(el)
     },
-    title: title => `Assassin\'s creed Forum - ${title}`
+    title: title => `Forum - ${title}`
 })
 
