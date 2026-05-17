@@ -18,6 +18,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Response;
 use Inertia\ResponseFactory;
+use Illuminate\Support\Facades\Storage;
 use Throwable;
 
 class UserController extends Controller
@@ -39,6 +40,9 @@ class UserController extends Controller
     public function register(UserStoreRequest $request) : RedirectResponse
     {
         $validated = $request->validated();
+
+        //dd($validated);
+
         DB::transaction(function () use ($validated) {
             $user = User::create([
                 'name'     => $validated['name'],
@@ -47,25 +51,12 @@ class UserController extends Controller
                 'password' => Hash::make($validated['password']),
             ]);
 
-            if ($validated['avatar'] !== null) {
-                $tempFile = TemporaryFile::where('folder', $validated['avatar'])->first();
-                $user->addMedia(
-                    storage_path('app/public/avatar/tmp/' . $validated['avatar'] . '/' . $tempFile->filename)
-                )->toMediaCollection('avatar');
-                rmdir(storage_path('app/public/avatar/tmp/' . $validated['avatar']));
-                $tempFile->delete();
-            }
+            if (!empty($validated['avatar'])) $user->addMediaFromRequest('avatar')->toMediaCollection('avatar');
         });
-        if (
-            auth()->attempt([
-                'email'    => $validated['email'],
-                'password' => $validated['password'],
-            ])
-        ) {
-            return redirect()->to(route('home'));
-        }
 
-        return back();
+        auth()->attempt($request->only('email', 'password'));
+
+        return redirect()->route('home');
     }
 
     /**
@@ -82,6 +73,7 @@ class UserController extends Controller
             ->with('media')
             ->select('id', 'username')
             ->firstOrFail();
+
         return inertia('profile', [
                 'user' => $user,
                 'posts' => PostController::getFilteredPosts($request->merge(['user_id' => $user->id]))
@@ -103,24 +95,45 @@ class UserController extends Controller
         return inertia('update-profile', ['user' => $user]);
     }
 
+    /**
+     * @param User $user
+     * @param UserEditRequest $request
+     *
+     * @return RedirectResponse
+     *
+     * @throws Throwable
+     */
     public function updateProfile(User $user, UserEditRequest $request) : RedirectResponse
     {
         abort_unless($user->id === auth()->id(), 403);
-        $validated = $request->validated();
-        array_filter($validated);
-        if (array_key_exists('banner', $validated) || array_key_exists('avatar', $validated)) {
-            foreach ($validated as $key => $value) {
-                $tempFile = TemporaryFile::where('folder', $value)->first();
-                $user->clearMediaCollection($key);
-                $user->addMedia(storage_path('app/public/' . $key . '/tmp/' . $value . '/' . $tempFile->filename))
-                    ->toMediaCollection($key);
-                rmdir(storage_path('app/public/' . $key . '/tmp/' . $value));
-                $tempFile->delete();
+
+        $validated = array_filter($request->validated());
+
+        DB::transaction(function () use ($validated, $user) {
+            foreach (['avatar', 'banner'] as $collection) {
+                if (!isset($validated[$collection])) continue;
+                $folder = $validated[$collection];
+                $tempFile = TemporaryFile::where('folder', $folder)->first();
+
+                if ($tempFile) {
+                    $user->clearMediaCollection($collection);
+
+                    $path = "{$collection}/tmp/{$folder}/{$tempFile->filename}";
+
+                    $user->addMediaFromDisk($path, 'public')
+                        ->toMediaCollection($collection);
+
+                    Storage::disk('public')->deleteDirectory("{$collection}/tmp/{$folder}");
+                    $tempFile->delete();
+                    unset($validated[$collection]);
+                }
+
+                // Update remaining profile fields
+                if (!empty($validated)) {
+                    $user->update($validated);
+                }
             }
-            return back();
-        }
-        $user->update($validated);
-        $user->save();
+        });
 
         return back();
     }
@@ -144,12 +157,16 @@ class UserController extends Controller
 
     public function storeImage(ImagePostRequest $request) : string
     {
+        $validated = array_filter($request->validated());
         $folder = '';
-        foreach (array_filter($request->validated()) as $key => $value) {
+
+        foreach ($validated as $key => $value) {
             $file     = $request->file($key);
             $filename = $file->getClientOriginalName();
             $folder   = uniqid() . '-' . now()->timestamp;
-            $file->storeAs('/public/' . $key . '/tmp/' . $folder, $filename);
+
+            // This already uses the 'public' disk abstraction
+            $file->storeAs("{$key}/tmp/{$folder}", $filename, 'public');
 
             TemporaryFile::create([
                 'folder'   => $folder,
