@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Models\Category;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 class PostFactory extends Factory
@@ -18,8 +20,8 @@ class PostFactory extends Factory
         return [
             'title'       => $this->faker->text(255),
             'content'     => $this->faker->text,
-            'user_id'     => $this->faker->numberBetween(1, 500),
-            'category_id' => $this->faker->numberBetween(1, 2),
+            'user_id'     => User::inRandomOrder()->first()?->id ?? User::factory(),
+            'category_id' => Category::inRandomOrder()->first()?->id ?? Category::factory()
         ];
     }
 }
