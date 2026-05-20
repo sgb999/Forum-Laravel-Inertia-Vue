@@ -61,11 +61,12 @@
                         <file-pond
                             ref="pond"
                             name="avatar"
+                            :storeAsFile="true"
                         />
                         <div v-if="errors.avatar" class="alert-danger">
                         <ul>
-                                <li>{{ errors.avatar }}</li>
-                            </ul>
+                            <li>{{ errors.avatar }}</li>
+                        </ul>
                         </div>
                     </div>
                     <button class="btn button-dark mt-2 float-end" :disabled="processing" type="submit">Register</button>
@@ -79,7 +80,6 @@
 <script>
 import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
-import { markRaw } from "vue";
 // Import Vue FilePond
 import vueFilePond from "vue-filepond";
 // Import FilePond styles

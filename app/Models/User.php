@@ -11,6 +11,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\{ HasMedia, InteractsWithMedia };
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use Storage;
 
 class User extends Authenticatable implements HasMedia
 {
@@ -64,7 +65,10 @@ class User extends Authenticatable implements HasMedia
     public function profilePicture(): MorphOne
     {
         return $this->morphOne(Media::class, 'model')
-            ->where('collection_name', '=', 'avatar');
+            ->where('collection_name', '=', 'avatar')
+            ->withDefault([
+                'fallback_path' => 'default/avatar.png',
+            ]);
     }
 
     /**
@@ -75,7 +79,10 @@ class User extends Authenticatable implements HasMedia
     public function bannerPicture(): MorphOne
     {
         return $this->morphOne(Media::class, 'model')
-            ->where('collection_name', '=', 'banner');
+            ->where('collection_name', '=', 'banner')
+            ->withDefault([
+                'fallback_path' => 'default/banner.jpg',
+            ]);
     }
 
     /**
