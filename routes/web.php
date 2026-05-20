@@ -21,7 +21,6 @@ use Illuminate\Support\Facades\Route;
 |
 */
 Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::post('/tmp/image', [UserController::class, 'storeImage']);
 Route::controller(PostController::class)->group(function () {
     Route::get('/', 'show' )->name('home');
     Route::get('/view-post/{post}', 'index')->name('post.show');
@@ -37,7 +36,7 @@ Route::middleware(['auth:sanctum'])->group(function () {
         ->group(function () {
             Route::get('/log-out', 'logOutMethod')->name('log-out');
             Route::get('/profile/update/', 'updateProfilePage')->name('user.update-profile');
-            Route::match(['post', 'put'], '/profile/update/{user}', 'updateProfile')->name('user.edit');
+            Route::put('/profile/update/{user}', 'updateProfile')->name('user.edit');
             Route::delete('/profile/update/{user}', 'destroy')->name('user.destroy');
         });
 

@@ -1,131 +1,170 @@
 <template>
     <navigation-bar />
-    <img class="banner" :src="banner ? banner : '/storage/default/banner.jpg'" alt="banner">
+    <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
     <div id="update-profile-page" class="container">
         <div class="user">
-            <img class="avatar" :src="avatar ? avatar : '/storage/default/avatar.png'" alt="avatar">
-            <h1 id="name-tag">{{ user.name }}</h1>
-            <h1 id="username-tag">{{ user.username }}</h1>
-            <h1 id="email-tag">{{ user.email }}</h1>
+            <img class="avatar" :src="user.data.profilePicture.url" alt="avatar">
+            <h1 id="name-tag">{{ user.data.name }}</h1>
+            <h1 id="username-tag">{{ user.data.username }}</h1>
+            <h1 id="email-tag">{{ user.data.email }}</h1>
         </div>
       <hr />
-        <form @submit.prevent>
-            <div class="row">
-                <label for="name">Profile Banner</label>
-                <div class="col">
-                    <file-pond
-                        name="banner"
-                        ref="pond"
-                        label-idle="Drop image here..."
-                        v-bind:allow-multiple="false"
-                        accepted-file-types="image/jpeg, image/png"
-                        :allowFileSizeValidation="true"
-                        maxFileSize="2MB"
-                        labelMaxFileSizeExceeded="File is too large"
-                        :required="false"
-                        :server="{
-                           url: '/tmp/image',
-                           headers: {
-                               'X-CSRF-TOKEN': $page.props.csrf
-                           }
-                    }"
-                        @processfile="profileBanner"
-                        @removefile="profileBanner"
-                    />
-                </div>
-                <div class="col">
-                    <button class="btn button-dark" :disabled="form.banner === ''" @click="updateProfileBanner">Update Profile Banner</button>
-                </div>
-            </div>
-            <div class="row">
-                <label for="name">Profile Picture</label>
-                <div class="col">
-                    <file-pond
-                        name="avatar"
-                        ref="pond"
-                        label-idle="Drop image here..."
-                        v-bind:allow-multiple="false"
-                        :required="false"
-                        accepted-file-types="image/jpeg, image/png"
-                        :allowFileSizeValidation="true"
-                        maxFileSize="1MB"
-                        labelMaxFileSizeExceeded="File is too large"
-                        :server="{
-                           url: '/tmp/image',
-                           headers: {
-                               'X-CSRF-TOKEN': $page.props.csrf
-                           }
-                    }"
-                        @processfile="profilePicture"
-                        @removefile="profilePicture"
-                    />
-                </div>
-                <div class="col">
-                    <button class="btn button-dark" :disabled="form.avatar === ''" @click="updateProfilePicture">Update Profile Picture</button>
-                </div>
-            </div>
-            <div class="row">
-                <div class="col">
-                    <div class="form-floating">
-                        <input v-model="form.name" id="name" class="form-control col-4 d-flex justify-content-center" type="text"
-                               placeholder="John Doe"  maxlength="255"
-                               autocomplete="off">
-                        <label for="name">Name</label>
-                        <div v-if="$page.props.errors.name" class="alert-danger">
+        <div>
+            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+                  #default = '{
+                    processing,
+                    isDirty,
+                    errors
+                  }'
+                  @success="resetBanner && sweetAlertSuccess('banner')"
+                  @error="sweetAlertError('banner')">
+                <div class="row">
+                    <label for="name">Profile Banner</label>
+                    <div class="col">
+                        <file-pond
+                            ref="bannerPond"
+                            name="banner"
+                            :storeAsFile="true"
+                        />
+                        <div v-if="errors.banner" class="alert-danger">
                             <ul>
-                                <li>{{ $page.props.errors.name }}</li>
+                                <li>{{ errors.banner }}</li>
                             </ul>
                         </div>
                     </div>
+                    <div class="col">
+                        <button type="submit" :disabled="processing || !isDirty" class="btn button-dark">Update Profile Banner</button>
+                    </div>
                 </div>
-                <div class="col">
-                    <button class="btn button-dark" :disabled="form.name === ''" @click="updateName">Update Name</button>
-                </div>
-            </div>
-            <div class="row mt-3">
-                <div class="col">
-                    <div class="form-floating">
-                        <input id="username" class="form-control col-4 d-flex justify-content-center" type="text"
-                               v-model="form.username" :placeholder="user.name" maxlength="255" autocomplete="off">
-                        <label for="username">Username</label>
-                        <div v-if="$page.props.errors.username" class="alert-danger">
+            </Form>
+            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+                  #default = '{
+                    processing,
+                    isDirty,
+                    errors
+                  }'
+                  @success="$refs.avatarPond.removeFiles() && sweetAlertSuccess('profile picture')"
+                  @error="sweetAlertError('profile picture')">
+                <div class="row">
+                    <label for="name">Profile Picture</label>
+                    <div class="col">
+                        <file-pond
+                            ref="avatarPond"
+                            name="avatar"
+                            :storeAsFile="true"
+                        />
+                        <div v-if="errors.avatar" class="alert-danger">
                             <ul>
-                                <li>{{ $page.props.errors.username }}</li>
+                                <li>{{ errors.avatar }}</li>
                             </ul>
                         </div>
                     </div>
+                    <div class="col">
+                        <button type="submit" :disabled="processing || !isDirty" class="btn button-dark">Update Profile Picture</button>
+                    </div>
                 </div>
-                <div class="col">
-                    <button @click="updateUsername" class="btn button-dark" :disabled="form.username === ''">Update username</button>
+            </Form>
+            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+                  #default = '{
+                    processing,
+                    isDirty,
+                    errors
+                  }'
+                  @success="sweetAlertSuccess('name')"
+                  :resetOnSuccess="['name']"
+                  @error="sweetAlertError('name')">
+                <div class="row">
+                    <div class="col">
+                        <div class="form-floating">
+                            <input id="name" name="name" class="form-control col-4 d-flex justify-content-center" type="text"
+                                   placeholder="John Doe"  maxlength="255"
+                                   autocomplete="off">
+                            <label for="name">Name</label>
+                            <div v-if="errors.name" class="alert-danger">
+                                <ul>
+                                    <li>{{ errors.name }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <button type="submit" :disabled="processing || !isDirty" class="btn button-dark">Update Name</button>
+                    </div>
                 </div>
-            </div>
+            </Form>
+            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+                  #default = '{
+                    processing,
+                    isDirty,
+                    errors
+                  }'
+                  @success="sweetAlertSuccess('username')"
+                  :resetOnSuccess="['username']"
+                  @error="sweetAlertError('username')">
+                <div class="row mt-3">
+                    <div class="col">
+                        <div class="form-floating">
+                            <input id="username" class="form-control col-4 d-flex justify-content-center" type="text"
+                                   name="username" :placeholder="user.data.name" maxlength="255" autocomplete="off">
+                            <label for="username">Username</label>
+                            <div v-if="errors.username" class="alert-danger">
+                                <ul>
+                                    <li>{{ errors.username }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <button type="submit" :disabled="processing || !isDirty" class="btn button-dark">Update username</button>
+                    </div>
+                </div>
+            </Form>
+            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+                  #default = '{
+                    processing,
+                    isDirty,
+                    errors
+                  }'
+                  @success="sweetAlertSuccess('email')"
+                  :resetOnSuccess="['email']"
+                  @error="sweetAlertError('email')">
             <div class="row mt-3">
                 <div class="col">
                     <div class="form-floating">
-                        <input v-model="form.email" id="email" class="form-control col-4 d-flex justify-content-center" type="text"
+                        <input name="email" id="email" class="form-control col-4 d-flex justify-content-center" type="text"
                                placeholder="example@example.com" maxlength="255" autocomplete="off">
                         <label for="email">Email</label>
-                        <div v-if="$page.props.errors.email" class="alert-danger">
+                        <div v-if="errors.email" class="alert-danger">
                             <ul>
-                                <li>{{ $page.props.errors.email }}</li>
+                                <li>{{ errors.email }}</li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 <div class="col">
-                    <button class="btn button-dark" :disabled="form.email === ''" @click="updateEmail">Update E-mail Address</button>
+                    <button type="submit" :disabled="processing || !isDirty" class="btn button-dark">Update E-mail Address</button>
                 </div>
             </div>
+            </Form>
+            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+                  #default = '{
+                    processing,
+                    isDirty,
+                    errors
+                  }'
+                  @success="sweetAlertSuccess('password')"
+                  :resetOnSuccess="['password', 'password_confirmation']"
+                  @error="sweetAlertError('password')">
             <div class="row mt-3">
                 <div class="col">
                     <div class="form-floating">
-                        <input v-model="form.password" id="password" class="form-control col-4 d-flex justify-content-center" type="text"
+                        <input name="password" id="password" class="form-control col-4 d-flex justify-content-center" type="text"
                                placeholder="Password: Minimum 8 characters" minlength="8" maxlength="255"
                                autocomplete="off">
                         <label for="password">Password</label>
-                        <div v-if="$page.props.errors.password" class="alert-danger">
+                        <div v-if="errors.password">
                             <ul>
-                                <li>{{ $page.props.errors.password }}</li>
+                                <li class="alert alert-danger">{{ errors.password }}</li>
                             </ul>
                         </div>
                     </div>
@@ -137,22 +176,23 @@
                 <div class="col">
                     <div class="form-floating">
                         <input id="password_confirmation" class="form-control col-4 d-flex justify-content-center"
-                               type="text" v-model="form.password_confirmation" placeholder="Must match Password"
+                               type="text" name="password_confirmation" placeholder="Must match Password"
                                maxlength="255" autocomplete="off">
                         <label for="password_confirmation">Confirm Password</label>
-                        <div v-if="$page.props.errors.password_confirmation" class="alert-danger">
+                        <div v-if="errors.password_confirmation" class="alert-danger">
                             <ul>
-                                <li>{{ $page.props.errors.password_confirmation }}</li>
+                                <li>{{ errors.password_confirmation }}</li>
                             </ul>
                         </div>
                     </div>
                 </div>
                 <div class="col">
-                    <button class="btn button-dark" :disabled="form.password === '' || form.password_confirmation === ''" @click="updatePassword">Update Password</button>
+                    <button type="submit" :disabled="processing || !isDirty" class="btn button-dark">Update Password</button>
                 </div>
             </div>
+            </Form>
             <button id="delete-button" class="btn btn-danger" @click="deleteProfile">Delete Profile</button>
-        </form>
+        </div>
     </div>
     <Footer />
 </template>
@@ -160,6 +200,8 @@
 <script>
 import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
+import { Form } from "@inertiajs/vue3"
+
 
 import vueFilePond from "vue-filepond";
 
@@ -187,6 +229,7 @@ export default {
     components: {
         NavigationBar,
         Footer,
+        Form,
         FilePond
     },
     props: {
@@ -194,150 +237,12 @@ export default {
             required: true
         }
     },
-    data(){
-        return{
-            banner: '',
-            avatar: '',
-            form : {
-                banner: '',
-                avatar: '',
-                name: '',
-                username: '',
-                email: '',
-                password: '',
-                password_confirmation: ''
-            }
-        }
-    },
     methods:{
-        updateName(){
-            const object = {
-                name : this.form.name
-            }
-            this.update(object, 'name')
+        resetBanner() {
+            this.$refs.bannerPond.removeFiles();
         },
-        updateUsername(){
-            const object = {
-                username : this.form.username
-            }
-            this.update(object, 'username')
-        },
-        updateEmail(){
-            const object = {
-                email : this.form.email
-            }
-            this.update(object, 'email')
-        },
-        updatePassword(){
-            const object = {
-                password : this.form.password,
-                password_confirmation: this.form.password_confirmation,
-            }
-            this.update(object, 'password')
-        },
-        update(object, attribute)
-        {
-            object._token = this.$page.props.csrf;
-            this.$inertia.post(route('user.edit', this.user.id), object,{
-                onSuccess: () => {
-                    switch(attribute){
-                        case 'name':
-                            this.user.name = this.form.name;
-                            this.form.name = '';
-                            break;
-                        case 'username':
-                            this.user.username = this.form.username;
-                            this.form.username = '';
-                            break;
-                        case 'email':
-                            this.user.email = this.form.email;
-                            this.form.email = '';
-                            break;
-                        case 'password':
-                            this.form.password = '';
-                            this.form.password_confirmation = '';
-                            break;
-                        case 'profile picture':
-                            document.getElementsByName("avatar")[0].value = '';
-                            this.form.avatar = '';
-                            break;
-                        case 'profile banner':
-                            document.getElementsByName("banner")[0].value = '';
-                            this.form.banner = '';
-                    }
-                  axios.get('/user/' + this.user.id).then(resp => {
-                    console.log(resp);
-                    resp.data.media.forEach(el => {
-                      if(el.collection_name === 'banner'){
-                        this.banner = el.original_url;
-                      }
-                      if(el.collection_name === 'avatar'){
-                        this.avatar = el.original_url;
-                      }
-                    });
-                  });
-                    this.sweetAlertSuccess(attribute); // fire success message
-                },
-                onError: () => {
-                    this.$swal({
-                        title: 'Ooops, something went wrong',
-                        text: '',
-                        icon: 'error',
-                        timer: 3000
-                    });
-                }
-            });
-            //this.updateImages();
-        },
-      getUserData(){
-        axios.get('/user/' + this.user.id).then(resp => {
-          console.log(resp.data);
-          resp.data.media.forEach(el => {
-            if(el.collection_name === 'banner'){
-              this.banner = el.original_url;
-            }
-            if(el.collection_name === 'avatar'){
-              this.avatar = el.original_url;
-            }
-          });
-        });
-      },
-        updateProfilePicture() {
-            const object = {
-                avatar : this.form.avatar,
-                _method : 'PUT'
-            }
-            this.update(object, 'profile picture');
-            //this.updateImages();
-        },
-        updateProfileBanner() {
-            const object = {
-                banner : this.form.banner,
-                _method : 'PUT'
-            };
-            this.update(object, 'profile banner');
-            //this.updateImages();
-        },
-        updateImages(){
-            const id = this.user.id;
-            setTimeout(function(){
-                axios.get('/user/' + id).then(resp => {
-                    resp.data.media.forEach(el => {
-                        if(el.collection_name === 'banner'){
-                            this.banner = el.original_url;
-                        }
-                        if(el.collection_name === 'avatar'){
-                            this.avatar = el.original_url;
-                        }
-                    });
-                });
-            }, 3000);
-        },
-        profilePicture(){
-            this.form.avatar = document.getElementsByName("avatar")[0].value;
-        },
-        profileBanner(){
-            this.form.banner = document.getElementsByName("banner")[0].value;
+        resetAvatar() {
+            this.$refs.avatarPond.removeFiles();
         },
         deleteProfile() {
             this.$swal({
@@ -363,17 +268,16 @@ export default {
                 icon: 'success',
                 timer: 3000
             });
+        },
+        sweetAlertError(message)
+        {
+            this.$swal({
+                title: 'Ooops, something went wrong updating your ' + message,
+                text: '',
+                icon: 'error',
+                timer: 3000
+            });
         }
-    },
-    mounted() {
-        this.user.media.forEach(el => {
-            if(el.collection_name === 'banner'){
-                this.banner = el.original_url;
-            }
-            if(el.collection_name === 'avatar'){
-                this.avatar = el.original_url;
-            }
-        });
     }
 };
 </script>
