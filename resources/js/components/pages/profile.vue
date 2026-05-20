@@ -1,6 +1,5 @@
 <template>
     <Head title="Profile" />
-    <navigation-bar />
     <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
     <div id="view-user-page" class="container" v-if="user.data !== null">
         <div class="user">
@@ -20,17 +19,16 @@
         </div>
     </div>
     <pagination v-if="posts.meta.links" class="container" :links="posts.meta.links" @nextPage="getTopics($event)"></pagination>
-    <Footer />
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
 import ViewTopics from "./viewTopics.vue";
 import Pagination from "../layout/pagination.vue";
 import {router} from "@inertiajs/vue3";
 export default {
     name: "profile",
+    layout: appLayout,
     props: {
         user: {
             type: Object,
@@ -42,8 +40,6 @@ export default {
         }
     },
     components: {
-        NavigationBar,
-        Footer,
         ViewTopics,
         Pagination
     },

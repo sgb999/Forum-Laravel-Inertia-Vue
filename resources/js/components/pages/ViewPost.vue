@@ -1,6 +1,5 @@
 <template>
     <Head title="View Post" />
-    <navigation-bar />
     <div class="container">
         <h3>{{post.title}}</h3>
         <p>{{post.content}}</p>
@@ -26,17 +25,16 @@
             <comment :postId="post.id" :comments="comments"/>
         </Deferred>
     </div>
-    <Footer />
 </template>
 
 <script>
+import appLayout from "../layout/AppLayout.vue";
 import { useForm, Deferred } from "@inertiajs/vue3";
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
 import Comment from "../pages/Comment.vue";
 import PageLoader from "../pages/PageLoader.vue";
 export default {
-    name: "Index",
+    name: "ViewPost",
+    layout: appLayout,
     props:{
         post: {
             required: true
@@ -47,8 +45,6 @@ export default {
     },
     components: {
         PageLoader,
-        NavigationBar,
-        Footer,
         Comment,
         Deferred
     },

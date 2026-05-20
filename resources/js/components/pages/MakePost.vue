@@ -1,6 +1,5 @@
 <template>
     <Head><title>Make a post</title></Head>
-    <navigation-bar />
     <div class="container w-50">
         <div class="card">
             <div class="card-header">
@@ -38,20 +37,14 @@
             </div>
         </div>
     </div>
-    <Footer />
 </template>
 
 <script>
-
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
 import { useForm } from "@inertiajs/vue3";
 export default {
     name: "MakePost",
-    components: {
-      NavigationBar,
-      Footer
-    },
+    layout: appLayout,
     props: {
       categories: {
           required: true
