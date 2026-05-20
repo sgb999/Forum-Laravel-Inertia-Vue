@@ -7,79 +7,70 @@
                 <h1>Register an account</h1>
             </div>
             <div class="card-body">
-                <form @submit.prevent>
+                <Form :action="route('register.post')" method="post" #default = '{
+                    processing,
+                    errors
+                }'>
                     <div class="form-floating mb-3">
-                        <input class="form-control col-4 d-flex justify-content-center" type="text" v-model="form.name" placeholder="John Doe" maxlength="255" required>
-                        <label>Name</label>
-                        <div v-if="form.errors.name" class="alert-danger">
+                        <input class="form-control col-4 d-flex justify-content-center" type="text" name="name" placeholder="John Doe" maxlength="255" required>
+                        <label for="name">Name</label>
+                        <div v-if="errors.name" class="alert-danger">
                             <ul>
-                                <li>{{ form.errors.name }}</li>
+                                <li>{{ errors.name }}</li>
                             </ul>
                         </div>
                     </div>
                     <div class="form-floating mb-3">
-                        <input class="form-control col-4 d-flex justify-content-center" type="text" v-model="form.username" placeholder="user123" maxlength="255" required>
-                        <label>Username</label>
-                        <div v-if="form.errors.username" class="alert-danger">
+                        <input class="form-control col-4 d-flex justify-content-center" type="text" name="username" placeholder="user123" maxlength="255" required>
+                        <label for="username">Username</label>
+                        <div v-if="errors.username" class="alert-danger">
                             <ul>
-                                <li>{{ form.errors.username }}</li>
+                                <li>{{ errors.username }}</li>
                             </ul>
                         </div>
                     </div>
                     <div class="form-floating mb-3">
-                        <input class="form-control" type="email" v-model="form.email" placeholder="example@example.com" minlength="8" maxlength="255" required>
+                        <input class="form-control" type="email" name="email" placeholder="example@example.com" minlength="8" maxlength="255" required>
                         <label>E-mail</label>
-                        <div v-if="form.errors.email" class="alert-danger">
+                        <div v-if="errors.email" class="alert-danger">
                             <ul>
-                                <li>{{ form.errors.email }}</li>
+                                <li>{{ errors.email }}</li>
                             </ul>
                         </div>
                     </div>
                     <div class="form-floating mb-3">
-                        <input class="form-control" type="password" v-model="form.password" placeholder="minimum 8 characters" minlength="8" maxlength="255" required>
+                        <input class="form-control" type="password" name="password" placeholder="minimum 8 characters" minlength="8" maxlength="255" required>
                         <label>Password</label>
-                        <div v-if="form.errors.password" class="alert-danger">
+                        <div v-if="errors.password" class="alert-danger">
                             <ul>
-                                <li>{{ form.errors.password }}</li>
+                                <li>{{ errors.password }}</li>
                             </ul>
                         </div>
                     </div>
                     <div class="form-floating mb-3">
-                        <input class="form-control" type="password" v-model="form.password_confirmation" placeholder="Must match password" minlength="8" maxlength="255" required>
+                        <input class="form-control" type="password" name="password_confirmation" placeholder="Must match password" minlength="8" maxlength="255" required>
                         <label>Confirm Password</label>
-                        <div v-if="form.errors.password_confirmation" class="alert-danger">
+                        <div v-if="errors.password_confirmation" class="alert-danger">
                             <ul>
-                                <li>{{ form.errors.password_confirmation }}</li>
+                                <li>{{ errors.password_confirmation }}</li>
                             </ul>
                         </div>
                     </div>
                     <div class="form-label">
                         <label>Profile Picture</label>
                         <file-pond
-                            id="avatar"
-                            name="avatar"
-                            v-model="form.avatar"
                             ref="pond"
-                            label-idle="Drop image here..."
-                            v-bind:allow-multiple="false"
-                            accepted-file-types="image/jpeg, image/png"
-                            :server="{
-                                   url: '/tmp/image',
-                                   headers: {
-                                       'X-CSRF-TOKEN': $page.props.csrf
-                                   }
-                            }"
-                            @processfile="addFile"
-                            @removefile="addFile"
+                            name="avatar"
+                            :storeAsFile="true"
                         />
-                        <div v-if="form.avatar" class="alert-danger">
-                            <ul>
-                                <li>{{ form.errors.avatar }}</li>
-                            </ul>
+                        <div v-if="errors.avatar" class="alert-danger">
+                        <ul>
+                            <li>{{ errors.avatar }}</li>
+                        </ul>
                         </div>
                     </div>
-                    <button class="btn button-dark mt-2 float-end" :disabled="disableButton()" v-on:click="register">Register</button>
-                </form>
+                    <button class="btn button-dark mt-2 float-end" :disabled="processing" type="submit">Register</button>
+                </Form>
             </div>
         </div>
     </div>
@@ -105,34 +96,26 @@ const FilePond = vueFilePond(
     FilePondPluginFileValidateType,
     FilePondPluginImagePreview,
 );
-import { useForm } from "@inertiajs/vue3"
+import { Form } from "@inertiajs/vue3"
 export default {
     name: "Register",
     components: {
+        Form,
         NavigationBar,
         Footer,
         FilePond
     },
-    data() {
-        let form = useForm({
-            name : '',
-            username : '',
-            email : '',
-            password : '',
-            password_confirmation : '',
-            avatar : '',
-            _token : this.$page.props.csrf,
-        });
-        return {
-            form
-        }
-    },
     methods: {
-        register() {
-            this.form.post(route('register.post'));
+      /**  register() {
+            this.form.post(route('register.post'), {
+                forceFormData: true
+            });
         },
-        addFile(){
-            this.form.avatar = document.getElementsByName("avatar")[0].value;
+        addFile(error, file) {
+            if (!error) this.form.avatar = markRaw(file.file);
+        },
+        removeFile() {
+            this.form.avatar = null;
         },
         disableButton() {
             return this.form.processing
@@ -141,7 +124,7 @@ export default {
                 || this.form.email === ''
                 || this.form.password === ''
                 || this.form.password_confirmation === ''
-        }
+        }*/
     }
 };
 </script>

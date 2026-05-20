@@ -1,14 +1,14 @@
 <template>
     <Head title="Profile" />
     <navigation-bar />
-    <img class="banner" :src="banner ? banner : '/storage/default/banner.jpg'" alt="banner">
-    <div id="view-user-page" class="container" v-if="user !== null">
+    <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
+    <div id="view-user-page" class="container" v-if="user.data !== null">
         <div class="user">
-            <img class="avatar" :src="avatar ? avatar : '/storage/default/avatar.png'" alt="avatar">
+            <img class="avatar" :src="user.data.profilePicture.url" alt="avatar">
             <h1>{{ user.username }}</h1>
             <div class="right">
-                <inertia-link v-if="user.id === $page.props.auth.user.id" :href="route('user.update-profile', $page.props.auth.user.username)" class="btn button-dark">Edit Profile</inertia-link>
-                <inertia-link v-if="user.id !== $page.props.auth.user.id && $page.props.auth.login" :href="route('chat.show', user.id)" class="btn btn-primary">Message</inertia-link>
+                <inertia-link v-if="user.data.id === $page.props.auth.user.id" :href="route('user.update-profile', $page.props.auth.user.username)" class="btn button-dark">Edit Profile</inertia-link>
+                <inertia-link v-if="user.data.id !== $page.props.auth.user.id && $page.props.auth.login" :href="route('chat.show', user.data.id)" class="btn btn-primary">Message</inertia-link>
             </div>
         </div>
     </div>
@@ -47,26 +47,10 @@ export default {
         ViewTopics,
         Pagination
     },
-    data() {
-        return {
-            banner: '',
-            avatar: ''
-        }
-    },
     methods: {
         getTopics(site) {
             router.get(site);
         }
-    },
-    mounted() {
-        this.user.media.forEach(el => {
-            if(el.collection_name === 'banner'){
-                this.banner = el.original_url;
-            }
-            if(el.collection_name === 'avatar'){
-                this.avatar = el.original_url;
-            }
-        })
     }
 };
 </script>

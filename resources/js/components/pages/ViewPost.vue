@@ -5,7 +5,7 @@
         <h3>{{post.title}}</h3>
         <p>{{post.content}}</p>
         <div class="user">
-            <img class="avatar" :src="post.user.profilePicture?.thumb || '/storage/default/avatar.png'" alt="avatar">
+            <img class="avatar" :src="post.user.profilePicture?.thumb" alt="avatar">
             <inertia-link :href="route('user.profile', { username : post.user.username })">
                 {{post.user.username}}
             </inertia-link>
@@ -80,13 +80,6 @@ export default {
                 }
             });
         }
-    },
-    mounted(){
-        /**this.post.user.media.forEach(el => {
-         if(el.collection_name === 'avatar'){
-         this.avatar = el.original_url;
-         }
-         })*/
     }
 };
 </script>
