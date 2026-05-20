@@ -1,6 +1,5 @@
 <template>
     <Head><title>Register</title></Head>
-    <navigation-bar />
     <div class="container">
         <div class="card">
             <div class="card-header">
@@ -74,12 +73,10 @@
             </div>
         </div>
     </div>
-    <Footer />
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
 // Import Vue FilePond
 import vueFilePond from "vue-filepond";
 // Import FilePond styles
@@ -99,10 +96,9 @@ const FilePond = vueFilePond(
 import { Form } from "@inertiajs/vue3"
 export default {
     name: "Register",
+    layout: appLayout,
     components: {
         Form,
-        NavigationBar,
-        Footer,
         FilePond
     },
     methods: {

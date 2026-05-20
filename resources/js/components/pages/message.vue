@@ -1,6 +1,5 @@
 <template>
     <Head title="Message" />
-    <navigation-bar />
     <div class="container w-75">
         <div class="user m-auto text-center">
             <img class="avatar d-block mx-auto" :src="user.profilePicture?.thumb" alt="avatar">
@@ -30,19 +29,16 @@
             <button class="btn button-dark mt-2 float-end" :disabled="form.message === ''" v-on:click="sendMessage">Send</button>
         </form>
     </div>
-    <Footer />
 </template>
 
 <script>
 import { useForm } from "@inertiajs/vue3";
 import NavigationBar from "../layout/NavigationBar.vue";
 import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
 export default {
     name: "message",
-    components: {
-        NavigationBar,
-        Footer
-    },
+    layout: appLayout,
     props:{
         id:{
           required: true

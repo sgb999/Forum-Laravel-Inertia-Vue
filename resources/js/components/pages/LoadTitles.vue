@@ -1,5 +1,4 @@
 <template>
-    <navigation-bar />
     <div class="container">
         <div class="row">
             <h2 class="col">Topics</h2>
@@ -9,20 +8,16 @@
         <view-topics :topics="posts.data"/>
         <pagination v-if="posts.meta" :links="posts.meta.links"></pagination>
     </div>
-    <Footer />
 </template>
 
 <script>
+import appLayout from "../layout/AppLayout.vue";
 import viewTopics from "./viewTopics.vue";
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
 import Pagination from "../layout/pagination.vue";
-import { router } from '@inertiajs/vue3'
 export default {
     name: "LoadTitles",
-    components:{
-        NavigationBar,
-        Footer,
+    layout: appLayout,
+    components: {
         viewTopics,
         Pagination
     },

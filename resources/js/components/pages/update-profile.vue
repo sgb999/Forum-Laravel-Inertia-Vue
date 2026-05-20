@@ -1,5 +1,4 @@
 <template>
-    <navigation-bar />
     <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
     <div id="update-profile-page" class="container">
         <div class="user">
@@ -194,12 +193,10 @@
             <button id="delete-button" class="btn btn-danger" @click="deleteProfile">Delete Profile</button>
         </div>
     </div>
-    <Footer />
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
 import { Form } from "@inertiajs/vue3"
 
 
@@ -226,9 +223,8 @@ const FilePond = vueFilePond(
 );
 export default {
     name: "update-profile",
+    layout: appLayout,
     components: {
-        NavigationBar,
-        Footer,
         Form,
         FilePond
     },
