@@ -15,6 +15,7 @@ await axios.get('/sanctum/csrf-cookie');
 
 
 createInertiaApp({
+    id: 'app',
     resolve: name => resolvePageComponent(
         `/resources/js/components/pages/${name}.vue`,
         import.meta.glob('/resources/js/components/pages/**/*.vue')
