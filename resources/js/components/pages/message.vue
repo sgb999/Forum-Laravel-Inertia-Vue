@@ -32,9 +32,7 @@
 </template>
 
 <script>
-import { useForm } from "@inertiajs/vue3";
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import {useForm, useHttp} from "@inertiajs/vue3";
 import appLayout from "../layout/AppLayout.vue";
 export default {
     name: "message",
@@ -70,11 +68,14 @@ export default {
             })
         },
         getChats(){
-            axios.get(route('message.index', this.id)).then((response) => {
-                this.messages = response.data;
-                this.scrollToBottom();
-            }).catch((error) => {
-                console.log('Error: ' + error)
+            useHttp({}).get(route('message.index', this.id), {
+                onSuccess: (response) => {
+                    this.messages = response;
+                    this.scrollToBottom();
+                },
+                onError: (error) => {
+                    console.log('Error: ' + error)
+                },
             });
         },
         sendMessage(){
