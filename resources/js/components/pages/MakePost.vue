@@ -68,7 +68,7 @@ export default {
     },
     methods: {
         postForm() {
-            this.form.put(route('post.store', this.post.data.id ? this.post.data.id : null), {
+            this.form.put(route('post.upsert', this.post.data.id ? this.post.data.id : null), {
                 onSuccess: () => {
                     this.$swal({
                         title: this.post.data.id ? 'Your post has been updated successfully' : 'Your post has been posted!',
