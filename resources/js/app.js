@@ -3,15 +3,14 @@ import {resolvePageComponent} from "laravel-vite-plugin/inertia-helpers";
 import('./bootstrap');
 
 import { createApp, h } from 'vue'
-import { createInertiaApp, Link, Head } from '@inertiajs/vue3'
+import {createInertiaApp, Link, Head, useHttp} from '@inertiajs/vue3'
 import { Ziggy } from './ziggy';
 //import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m';
 import VueSweetalert2 from 'vue-sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import moment from "moment/moment";
-import axios from 'axios';
 
-await axios.get('/sanctum/csrf-cookie');
+await useHttp({}).get('/sanctum/csrf-cookie');
 
 
 createInertiaApp({
