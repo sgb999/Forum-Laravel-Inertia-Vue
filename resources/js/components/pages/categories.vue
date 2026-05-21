@@ -1,6 +1,5 @@
 <template>
     <Head><title>Categories</title></Head>
-    <navigation-bar />
     <div class="container">
         <h2>Categories</h2>
         <hr>
@@ -10,18 +9,13 @@
             <p>{{ category.description }}</p>
         </inertia-link>
     </div>
-    <Footer />
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
 export default {
     name: "categories",
-    components: {
-        NavigationBar,
-        Footer
-    },
+    layout: appLayout,
     props:{
         categories: {
             required: true

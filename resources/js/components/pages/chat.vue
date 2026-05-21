@@ -1,6 +1,5 @@
 <template>
     <Head title="Chats" />
-    <navigation-bar />
     <div class="container">
     <h1>Chats</h1>
     <hr>
@@ -9,18 +8,14 @@
         <hr />
     </div>
     </div>
-    <Footer />
 </template>
 
 <script>
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
+import appLayout from "../layout/AppLayout.vue";
+
 export default {
     name: "chat",
-    components: {
-        NavigationBar,
-        Footer
-    },
+    layout: appLayout,
     props: {
         chats: {
             required: true
