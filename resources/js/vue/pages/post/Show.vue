@@ -2,23 +2,29 @@
     <div class="container">
         <div class="row">
             <h2 class="col">Topics</h2>
-            <inertia-link v-if="$page.props.auth.login" class="btn button-dark col-2" href="/post/">Make a Post</inertia-link>
+            <inertia-link
+                v-if="$page.props.auth.login"
+                  class="btn button-dark col-2"
+                  :href="route('post.edit')"
+            prefetch>
+                Make a Post
+            </inertia-link>
         </div>
         <hr>
-        <view-topics :topics="posts.data"/>
+        <posts :topics="posts.data"/>
         <pagination v-if="posts.meta" :links="posts.meta.links"></pagination>
     </div>
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
-import viewTopics from "./viewTopics.vue";
-import Pagination from "../layout/pagination.vue";
+import appLayout from "../../layout/AppLayout.vue";
+import Posts from "../../components/Posts.vue";
+import Pagination from "../../layout/Pagination.vue";
 export default {
-    name: "LoadTitles",
+    name: "Show",
     layout: appLayout,
     components: {
-        viewTopics,
+        Posts,
         Pagination
     },
     props:{

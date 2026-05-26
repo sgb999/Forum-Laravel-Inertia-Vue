@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', [PostController::class, 'show'])->name('home');
-Route::get('/view-post/{post}', [PostController::class, 'index'])->name('post.show');
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
+Route::get('/', [PostController::class, 'show'])->name('post.show');
+Route::get('/view-post/{post}', [PostController::class, 'index'])->name('post.index');
+Route::get('/categories', [CategoryController::class, 'show'])->name('categories.show');
 Route::get('/user/profile/{username}', [UserController::class, 'profile'])->name('user.profile');
 
 /*
@@ -28,8 +28,8 @@ Route::get('/user/profile/{username}', [UserController::class, 'profile'])->name
 */
 
 Route::middleware('guest')->group(function () {
-    Route::inertia('/login', 'Login')->name('login.index');
-    Route::inertia('/register', 'Register')->name('register.index');
+    Route::inertia('/login', 'user/Login')->name('login.index');
+    Route::inertia('/register', 'user/Register')->name('register.index');
 
     Route::controller(UserController::class)->group(function () {
         Route::post('/login', 'login')->name('login.post');
@@ -49,24 +49,24 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/log-out', [UserController::class, 'logOutMethod'])->name('logout');
 
     // Profile
-    Route::controller(UserController::class)->prefix('/profile')->group(function () {
-        Route::get('/update', 'updateProfilePage')->name('user.update-profile');
-        Route::put('/update/{user}', 'updateProfile')->name('user.update');
-        Route::delete('/{user}', 'destroy')->name('user.destroy');
+    Route::controller(UserController::class)->prefix('/profile')->name('user.')->group(function () {
+        Route::get('/update', 'updateProfilePage')->name('update-profile');
+        Route::put('/update/{user}', 'updateProfile')->name('update');
+        Route::delete('/{user}', 'destroy')->name('destroy');
     });
 
     // Posts
-    Route::controller(PostController::class)->prefix('/post')->group(function () {
-        Route::get('/{post?}', 'postPage')->name('post.index');
-        Route::put('/{post?}', 'upsert')->name('post.upsert');
-        Route::delete('/{post}', 'destroy')->name('post.destroy');
+    Route::controller(PostController::class)->prefix('/post')->name('post.')->group(function () {
+        Route::get('/{post?}', 'postPage')->name('edit');
+        Route::put('/{post?}', 'upsert')->name('upsert');
+        Route::delete('/{post}', 'destroy')->name('destroy');
     });
 
     // Comments
     Route::delete('/comment/{comment}', [CommentController::class, 'destroy'])->name('comment.destroy');
 
     // Chats & Messages
-    Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.index');
-    Route::get('/message/user/{user}', [ChatController::class, 'show'])->name('chat.show');
+    Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.show');
+    Route::get('/message/user/{user}', [ChatController::class, 'index'])->name('chat.index');
     Route::post('/message', [MessageController::class, 'store'])->name('message.store');
 });

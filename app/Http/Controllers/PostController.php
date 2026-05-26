@@ -25,7 +25,7 @@ class PostController extends Controller
      */
     public function index(Post $post): Response|ResponseFactory
     {
-        return inertia('ViewPost', [
+        return inertia('post/Index', [
             'post' => Inertia::once(function () use ($post) {
                 $post->load([
                     'user' => fn ($query) => $query->with('profilePicture')->select(['id', 'username'])
@@ -54,7 +54,7 @@ class PostController extends Controller
      */
     public function show(PostFilterRequest $request): Response|ResponseFactory
     {
-        return inertia('LoadTitles', ['posts' => $this->getFilteredPosts($request)]);
+        return inertia('post/Show', ['posts' => $this->getFilteredPosts($request)]);
     }
 
     /**
@@ -87,7 +87,7 @@ class PostController extends Controller
      */
     public function postPage(?Post $post) : Response|ResponseFactory
     {
-        return inertia('MakePost', [
+        return inertia('post/Upsert', [
             'post'       => $post ? new PostResource($post?->loadMissing('category:id')) : null,
             'categories' => Category::select(['id', 'name'])->get()->toArray()]
         );
@@ -117,6 +117,6 @@ class PostController extends Controller
         abort_unless($post->user_id === auth()->id(), 403);
         $post->delete();
 
-        return redirect()->route('home');
+        return redirect()->route('post.show');
     }
 }

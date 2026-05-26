@@ -16,8 +16,8 @@ await useHttp({}).get('/sanctum/csrf-cookie');
 createInertiaApp({
     id: 'app',
     resolve: name => resolvePageComponent(
-        `/resources/js/components/pages/${name}.vue`,
-        import.meta.glob('/resources/js/components/pages/**/*.vue')
+        `/resources/js/vue/pages/${name}.vue`,
+        import.meta.glob('/resources/js/vue/pages/**/*.vue')
     ),
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) })

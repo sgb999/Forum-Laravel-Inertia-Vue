@@ -49,7 +49,7 @@
 
 <script>
 import pageLoader from "./PageLoader.vue";
-import Pagination from "../layout/pagination.vue";
+import Pagination from "../layout/Pagination.vue";
 import { useHttp } from '@inertiajs/vue3'
 
 export default {

@@ -4,16 +4,16 @@
     <div id="view-user-page" class="container" v-if="user.data !== null">
         <div class="user">
             <img class="avatar" :src="user.data.profilePicture.url" alt="avatar">
-            <h1>{{ user.username }}</h1>
+            <h1>{{ user.data.username }}</h1>
             <div class="right">
                 <inertia-link v-if="user.data.id === $page.props.auth.user.id" :href="route('user.update-profile', $page.props.auth.user.username)" class="btn button-dark">Edit Profile</inertia-link>
-                <inertia-link v-if="user.data.id !== $page.props.auth.user.id && $page.props.auth.login" :href="route('chat.show', user.data.id)" class="btn btn-primary">Message</inertia-link>
+                <inertia-link v-if="user.data.id !== $page.props.auth.user.id && $page.props.auth.login" :href="route('chat.index', user.data.id)" class="btn btn-primary">Message</inertia-link>
             </div>
         </div>
     </div>
     <div class="content">
         <hr class="container">
-        <view-topics :topics="posts.data"></view-topics>
+        <posts :topics="posts.data"></posts>
         <div v-if="posts.data < 1" class="empty-posts">
             <h4>There are no posts yet</h4>
         </div>
@@ -22,12 +22,12 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
-import ViewTopics from "./viewTopics.vue";
-import Pagination from "../layout/pagination.vue";
-import {router} from "@inertiajs/vue3";
+import appLayout from "../../layout/AppLayout.vue";
+import Posts from "../../components/Posts.vue";
+import Pagination from "../../layout/Pagination.vue";
+import { router } from "@inertiajs/vue3";
 export default {
-    name: "profile",
+    name: "Profile",
     layout: appLayout,
     props: {
         user: {
@@ -40,7 +40,7 @@ export default {
         }
     },
     components: {
-        ViewTopics,
+        Posts,
         Pagination
     },
     methods: {

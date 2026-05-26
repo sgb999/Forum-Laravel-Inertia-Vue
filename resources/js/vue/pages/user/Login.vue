@@ -24,7 +24,7 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 import { useForm } from "@inertiajs/vue3"
 export default {
     name: "Login",
