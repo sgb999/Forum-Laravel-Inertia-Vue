@@ -29,7 +29,7 @@
 import { Link as InertiaLink } from "@inertiajs/vue3";
 
 export default {
-    name: "pagination",
+    name: "Pagination",
     components: { InertiaLink },
     props: {
         links: {

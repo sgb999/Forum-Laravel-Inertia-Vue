@@ -20,7 +20,7 @@
             <div class="form-floating mb-3">
                 <textarea class="form-control" placeholder="Content" v-model="form.message" id="formContent"></textarea>
                 <label for="formContent">Content</label>
-                <div v-if="form.errors.message" class="alert-danger">
+                <div v-if="form.errors.message" class="alert alert-danger">
                     <ul>
                         <li>{{ form.errors.message }}</li>
                     </ul>
@@ -33,9 +33,9 @@
 
 <script>
 import {useForm, useHttp} from "@inertiajs/vue3";
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 export default {
-    name: "message",
+    name: "Index",
     layout: appLayout,
     props:{
         id:{

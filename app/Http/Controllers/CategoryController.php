@@ -13,8 +13,8 @@ class CategoryController extends Controller
     /**
      * @return  Response|ResponseFactory
      */
-    public function index() : Response|ResponseFactory
+    public function show() : Response|ResponseFactory
     {
-        return inertia('categories', ['categories' => Category::all()]);
+        return inertia('categories/Show', ['categories' => Category::all()]);
     }
 }

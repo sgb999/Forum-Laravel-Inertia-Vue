@@ -196,7 +196,7 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 import { Form } from "@inertiajs/vue3"
 
 
@@ -222,7 +222,7 @@ const FilePond = vueFilePond(
     FilePondPluginImageValidateSize
 );
 export default {
-    name: "update-profile",
+    name: "Update",
     layout: appLayout,
     components: {
         Form,
