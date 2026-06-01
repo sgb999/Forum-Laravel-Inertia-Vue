@@ -12,49 +12,61 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
-| Web Routes
+| Public Routes
 |--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
 */
-Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-Route::controller(PostController::class)->group(function () {
-    Route::get('/', 'show' )->name('home');
-    Route::get('/view-post/{post}', 'index')->name('post.show');
-});
-Route::get('user/profile/{username}', [UserController::class, 'profile'])->name('user.profile');
 
-Route::middleware(['auth:sanctum'])->group(function () {
-    Route::controller(CommentController::class)
-        ->prefix('/comment')->group(function () {
-            Route::delete('/{comment}', 'destroy')->name('comment.destroy');
-        });
-    Route::controller(UserController::class)
-        ->group(function () {
-            Route::get('/log-out', 'logOutMethod')->name('log-out');
-            Route::get('/profile/update/', 'updateProfilePage')->name('user.update-profile');
-            Route::put('/profile/update/{user}', 'updateProfile')->name('user.edit');
-            Route::delete('/profile/update/{user}', 'destroy')->name('user.destroy');
-        });
+Route::get('/', [PostController::class, 'show'])->name('post.show');
+Route::get('/view-post/{post}', [PostController::class, 'index'])->name('post.index');
+Route::get('/categories', [CategoryController::class, 'show'])->name('categories.show');
+Route::get('/user/profile/{username}', [UserController::class, 'profile'])->name('user.profile');
 
-    Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.index');
-    Route::get('/message/user/{user}', [ChatController::class, 'show'])->name('chat.show');
-    Route::post('/message', [MessageController::class, 'store'])->name('message.store');
+/*
+|--------------------------------------------------------------------------
+| Guest Routes
+|--------------------------------------------------------------------------
+*/
 
-    //Post routing
-    Route::prefix('/post')->controller(PostController::class)->group(function () {
-        Route::get('/{post?}', 'postPage')->name('post.index');
-        Route::put('/{post?}', 'upsert')->name('post.store');
-        Route::delete('/{post}', 'destroy')->name('post.destroy');
+Route::middleware('guest')->group(function () {
+    Route::inertia('/login', 'user/Login')->name('login.index');
+    Route::inertia('/register', 'user/Register')->name('register.index');
+
+    Route::controller(UserController::class)->group(function () {
+        Route::post('/login', 'login')->name('login.post');
+        Route::post('/register', 'register')->name('register.post');
     });
 });
 
-Route::middleware(['guest'])->controller(UserController::class)->group(function () {
-    Route::inertia('/login', 'Login')->name('login.index');
-    Route::post('/login', 'login')->name('login.post');
-    Route::post('/register', 'register')->name('register.post');
-    Route::inertia('/register', 'Register')->name('register.index');
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum')->group(function () {
+
+    // Auth
+    Route::post('/log-out', [UserController::class, 'logOutMethod'])->name('logout');
+
+    // Profile
+    Route::controller(UserController::class)->prefix('/profile')->name('user.')->group(function () {
+        Route::get('/update', 'updateProfilePage')->name('update-profile');
+        Route::put('/update/{user}', 'updateProfile')->name('update');
+        Route::delete('/{user}', 'destroy')->name('destroy');
+    });
+
+    // Posts
+    Route::controller(PostController::class)->prefix('/post')->name('post.')->group(function () {
+        Route::get('/{post?}', 'postPage')->name('edit');
+        Route::put('/{post?}', 'upsert')->name('upsert');
+        Route::delete('/{post}', 'destroy')->name('destroy');
+    });
+
+    // Comments
+    Route::delete('/comment/{comment}', [CommentController::class, 'destroy'])->name('comment.destroy');
+
+    // Chats & Messages
+    Route::get('/chats', [ChatController::class, 'getChats'])->name('chat.show');
+    Route::get('/message/user/{user}', [ChatController::class, 'index'])->name('chat.index');
+    Route::post('/message', [MessageController::class, 'store'])->name('message.store');
 });

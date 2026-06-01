@@ -4,7 +4,7 @@
         <h2>Categories</h2>
         <hr>
         <inertia-link v-for="category in categories"
-           :href="route('home',{ category_id: category.id})">
+           :href="route('post.show',{ category_id: category.id})">
             <h3>{{ category.name }}</h3>
             <p>{{ category.description }}</p>
         </inertia-link>
@@ -12,9 +12,9 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 export default {
-    name: "categories",
+    name: "Show",
     layout: appLayout,
     props:{
         categories: {

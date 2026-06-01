@@ -29,7 +29,7 @@ class UserController extends Controller
         if (auth()->attempt($credentials)) {
             $request->session()->regenerate();
 
-            return redirect()->route('home');
+            return redirect()->route('post.show');
         }
 
         return redirect()->back()->withErrors([
@@ -56,7 +56,7 @@ class UserController extends Controller
 
         auth()->attempt($request->only('email', 'password'));
 
-        return redirect()->route('home');
+        return redirect()->route('post.show');
     }
 
     /**
@@ -74,7 +74,7 @@ class UserController extends Controller
             ->select('id', 'username')
             ->firstOrFail();
 
-        return inertia('profile', [
+        return inertia('user/Profile', [
                 'user' => $user->toResource(),
                 'posts' => PostController::getFilteredPosts($request->merge(['user_id' => $user->id]))
             ]
@@ -92,7 +92,7 @@ class UserController extends Controller
 
         abort_unless($user->id === auth()->id(), 403);
 
-        return inertia('update-profile', ['user' => $user->toResource()]);
+        return inertia('user/Update', ['user' => $user->toResource()]);
     }
 
     /**
@@ -140,6 +140,6 @@ class UserController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect(route('home'));
+        return redirect(route('post.show'));
     }
 }

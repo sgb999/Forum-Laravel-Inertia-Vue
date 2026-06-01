@@ -56,7 +56,7 @@ class RedirectIfAuthenticated
         try {
             $history = session()->get('url_history', []);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            return route('home');
+            return route('post.show');
         }
 
         // Use the actual request root to ensure compatibility with different domains/environments
@@ -75,6 +75,6 @@ class RedirectIfAuthenticated
             }
         }
 
-        return route('home');
+        return route('post.show');
     }
 }

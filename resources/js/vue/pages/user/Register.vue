@@ -76,7 +76,7 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 // Import Vue FilePond
 import vueFilePond from "vue-filepond";
 // Import FilePond styles
@@ -102,17 +102,7 @@ export default {
         FilePond
     },
     methods: {
-      /**  register() {
-            this.form.post(route('register.post'), {
-                forceFormData: true
-            });
-        },
-        addFile(error, file) {
-            if (!error) this.form.avatar = markRaw(file.file);
-        },
-        removeFile() {
-            this.form.avatar = null;
-        },
+      /**
         disableButton() {
             return this.form.processing
                 || this.form.name === ''

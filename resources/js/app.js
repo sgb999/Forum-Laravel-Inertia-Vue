@@ -3,22 +3,21 @@ import {resolvePageComponent} from "laravel-vite-plugin/inertia-helpers";
 import('./bootstrap');
 
 import { createApp, h } from 'vue'
-import { createInertiaApp, Link, Head } from '@inertiajs/vue3'
+import {createInertiaApp, Link, Head, useHttp} from '@inertiajs/vue3'
 import { Ziggy } from './ziggy';
 //import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m';
 import VueSweetalert2 from 'vue-sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import moment from "moment/moment";
-import axios from 'axios';
 
-await axios.get('/sanctum/csrf-cookie');
+await useHttp({}).get('/sanctum/csrf-cookie');
 
 
 createInertiaApp({
     id: 'app',
     resolve: name => resolvePageComponent(
-        `/resources/js/components/pages/${name}.vue`,
-        import.meta.glob('/resources/js/components/pages/**/*.vue')
+        `/resources/js/vue/pages/${name}.vue`,
+        import.meta.glob('/resources/js/vue/pages/**/*.vue')
     ),
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) })

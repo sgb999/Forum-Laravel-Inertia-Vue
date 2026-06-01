@@ -19,7 +19,7 @@ test('can login', function () {
     $response->assertSessionHasNoErrors();
     $response->assertStatus(302);
 
-    $response->assertRedirect(route('home'));
+    $response->assertRedirect(route('post.show'));
 });
 
 test('can not login with incorrect password', function () {
@@ -63,5 +63,5 @@ test('can not load login page if user is logged in', function () {
     $response->assertRedirect();
 
     $response = $this->get(route('login.index'));
-    $response->assertRedirect(route('home'));
+    $response->assertRedirect(route('post.show'));
 });

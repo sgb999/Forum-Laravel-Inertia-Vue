@@ -9,7 +9,7 @@
         </div>
       <hr />
         <div>
-            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -36,7 +36,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -63,7 +63,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -91,7 +91,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -118,7 +118,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -145,7 +145,7 @@
                 </div>
             </div>
             </Form>
-            <Form :action="route('user.edit', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -196,7 +196,7 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 import { Form } from "@inertiajs/vue3"
 
 
@@ -222,7 +222,7 @@ const FilePond = vueFilePond(
     FilePondPluginImageValidateSize
 );
 export default {
-    name: "update-profile",
+    name: "Update",
     layout: appLayout,
     components: {
         Form,

@@ -11,7 +11,7 @@
             <p>{{ this.formatDate(post.createdAt) }}</p>
         </div>
         <div v-if="post.user.id === $page.props.auth.user.id" class="mt-3">
-            <inertia-link :href="route('post.index', post.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
+            <inertia-link :href="route('post.edit', post.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
             <button class="btn btn-danger" @click="deletePost">Delete</button>
         </div>
         <hr>
@@ -28,12 +28,12 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 import { useForm, Deferred } from "@inertiajs/vue3";
-import Comment from "../pages/Comment.vue";
-import PageLoader from "../pages/PageLoader.vue";
+import Comment from "../../components/Comment.vue";
+import PageLoader from "../../components/PageLoader.vue";
 export default {
-    name: "ViewPost",
+    name: "Index",
     layout: appLayout,
     props:{
         post: {

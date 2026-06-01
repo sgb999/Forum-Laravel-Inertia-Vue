@@ -49,11 +49,9 @@
 
 <script>
 import pageLoader from "./PageLoader.vue";
-import { useForm } from "@inertiajs/vue3"
-import Pagination from "../layout/pagination.vue";
-import { usePage } from '@inertiajs/vue3'
-import { computed } from 'vue';
-import moment from "moment";
+import Pagination from "../layout/Pagination.vue";
+import { useHttp } from '@inertiajs/vue3'
+
 export default {
     name: "Comment",
     components:{
@@ -70,24 +68,21 @@ export default {
         }
     },
     data(){
+        const form = useHttp({
+                comment: ''
+            }).dontRemember('comment').withAllErrors();
+        const editForm = useHttp({ comment: '' }).withAllErrors();
         return {
-            form: {
-                comment: '',
-                errors: {
-                    comment: null
-                }
-            },
+            form,
+            editForm,
             disabled: Boolean
         }
     },
     methods: {
         setComment() {
-            this.form.errors.comment = null;
-            axios.post(route('comment.store', {post: this.postId}), {
-                comment: this.form.comment
-            }).then((response) => {
-                if (response.status === 201) {
-                    this.comments.data.unshift(response.data);
+            this.form.post(route('comment.store', {post: this.postId}), {
+                onSuccess: (response) => {
+                    this.comments.data.unshift(response);
                     this.$swal({
                         title: 'Your comment has been posted!',
                         text: '',
@@ -95,10 +90,6 @@ export default {
                         timer: 3000
                     });
                     this.form.comment = '';
-                }
-            }).catch((error) => {
-                if (error.response?.status === 422) {
-                    this.form.errors.comment = error.response.data.errors.comment;
                 }
             });
         },
@@ -108,18 +99,24 @@ export default {
             this.closeForm(event);
         },
         updateComment(index, event) {
-            axios.put(route('comment.edit', {comment: this.comments.data[index].id}),
-                {
-                    comment: event.target.parentElement.parentElement.querySelector('textarea').value
-                }).then((response) => {
-                if (response.status === 200) {
-                    this.comments.data[index] = response.data;
+            this.editForm.comment = event.target.parentElement.parentElement.querySelector('textarea').value;
+
+            this.editForm.put(route('comment.edit', { comment: this.comments.data[index].id }), {
+                onSuccess: () => {
+                    this.comments.data[index].comment = this.editForm.comment;
                     this.closeForm(event);
                     this.$swal({
                         title: 'Your comment has been updated!',
                         text: '',
                         icon: 'success',
                         timer: 3000
+                    });
+                },
+                onError: () => {
+                    this.$swal({
+                        title: 'Failed to update comment',
+                        text: this.editForm.errors.comment[0] ?? 'Something went wrong.',
+                        icon: 'error',
                     });
                 }
             });

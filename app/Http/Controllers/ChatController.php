@@ -18,6 +18,47 @@ use function array_merge;
 
 class ChatController extends Controller
 {
+
+    /**
+     * @param int $id
+     *
+     * @return Response|ResponseFactory
+     */
+    public function index(int $id) : Response|ResponseFactory
+    {
+        $chat = Chat::where([
+            ['user_id_1', $id],
+            ['user_id_2', auth()->id()],
+        ])
+            ->orWhere([
+                ['user_id_1', auth()->id()],
+                ['user_id_2', $id],
+            ])->first();
+
+        if (! $chat) {
+            $chat = Chat::create([
+                'user_id_1' => auth()->id(),
+                'user_id_2' => $id,
+            ]);
+        }
+        return inertia('messages/Index', [
+            'id'       => $chat->id,
+            'user'     => new UserResource(User::with('profilePicture')
+                ->select('id', 'username')
+                ->find($id)),
+            'messages' => MessageResource::collection(
+                Message::where('chat_id', $chat->id)
+                    ->with('user:id,username')
+                    ->get()
+            ),
+        ]);
+    }
+
+    /**
+     * @param User $user
+     *
+     * @return Response|ResponseFactory
+     */
     public function store(User $user) : Response|ResponseFactory
     {
         return inertia(
@@ -31,6 +72,9 @@ class ChatController extends Controller
         );
     }
 
+    /**
+     * @return Response|ResponseFactory
+     */
     public function getChats() : Response|ResponseFactory
     {
         return inertia('chat', [
@@ -47,35 +91,5 @@ class ChatController extends Controller
             ->toArray())
             ]
         );
-    }
-
-    public function show(int $id) : Response|ResponseFactory
-    {
-        $chat = Chat::where([
-            ['user_id_1', $id],
-            ['user_id_2', auth()->id()],
-        ])
-        ->orWhere([
-            ['user_id_1', auth()->id()],
-            ['user_id_2', $id],
-        ])->first();
-
-        if (! $chat) {
-            $chat = Chat::create([
-                'user_id_1' => auth()->id(),
-                'user_id_2' => $id,
-            ]);
-        }
-        return inertia('message', [
-            'id'       => $chat->id,
-            'user'     => new UserResource(User::with('profilePicture')
-                ->select('id', 'username')
-                ->find($id)),
-            'messages' => MessageResource::collection(
-                Message::where('chat_id', $chat->id)
-                ->with('user:id,username')
-                ->get()
-            ),
-        ]);
     }
 }

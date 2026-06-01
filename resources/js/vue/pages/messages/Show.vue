@@ -11,10 +11,10 @@
 </template>
 
 <script>
-import appLayout from "../layout/AppLayout.vue";
+import appLayout from "../../layout/AppLayout.vue";
 
 export default {
-    name: "chat",
+    name: "Show",
     layout: appLayout,
     props: {
         chats: {

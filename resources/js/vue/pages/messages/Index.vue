@@ -20,7 +20,7 @@
             <div class="form-floating mb-3">
                 <textarea class="form-control" placeholder="Content" v-model="form.message" id="formContent"></textarea>
                 <label for="formContent">Content</label>
-                <div v-if="form.errors.message" class="alert-danger">
+                <div v-if="form.errors.message" class="alert alert-danger">
                     <ul>
                         <li>{{ form.errors.message }}</li>
                     </ul>
@@ -32,12 +32,10 @@
 </template>
 
 <script>
-import { useForm } from "@inertiajs/vue3";
-import NavigationBar from "../layout/NavigationBar.vue";
-import Footer from "../layout/Footer.vue";
-import appLayout from "../layout/AppLayout.vue";
+import {useForm, useHttp} from "@inertiajs/vue3";
+import appLayout from "../../layout/AppLayout.vue";
 export default {
-    name: "message",
+    name: "Index",
     layout: appLayout,
     props:{
         id:{
@@ -70,11 +68,14 @@ export default {
             })
         },
         getChats(){
-            axios.get(route('message.index', this.id)).then((response) => {
-                this.messages = response.data;
-                this.scrollToBottom();
-            }).catch((error) => {
-                console.log('Error: ' + error)
+            useHttp({}).get(route('message.index', this.id), {
+                onSuccess: (response) => {
+                    this.messages = response;
+                    this.scrollToBottom();
+                },
+                onError: (error) => {
+                    console.log('Error: ' + error)
+                },
             });
         },
         sendMessage(){
