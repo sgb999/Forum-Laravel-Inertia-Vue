@@ -4,23 +4,16 @@ declare(strict_types=1);
 
 namespace App\Models;
 
-//use App\Http\Traits\DateTrait;
+use Illuminate\Database\Eloquent\Attributes\{Table, Fillable};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+#[Table(name: 'messages')]
+#[Fillable(['chat_id', 'message', 'user_id'])]
 class Message extends Model
 {
     use HasFactory;
-  //  use DateTrait;
-
-  //  use DateTrait;
-
-    protected $fillable = [
-        'chat_id',
-        'message',
-        'user_id',
-    ];
 
     public function user() : BelongsTo
     {
