@@ -9,5 +9,6 @@ services:
     - rustfs
 workers:
     - queue
+    - reverb
     - schedule
     - vite
