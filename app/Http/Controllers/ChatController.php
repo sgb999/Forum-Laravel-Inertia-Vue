@@ -9,7 +9,6 @@ use App\Http\Resources\UserResource;
 use App\Models\Chat;
 use App\Models\Message;
 use App\Models\User;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Inertia\Response;
 use Inertia\ResponseFactory;
@@ -77,7 +76,7 @@ class ChatController extends Controller
      */
     public function getChats() : Response|ResponseFactory
     {
-        return inertia('chat', [
+        return inertia('messages/Show', [
             'chats' => array_merge(DB::table('users')
             ->join('chats', 'chats.user_id_2', '=', 'users.id')
             ->select('users.username', 'users.id')

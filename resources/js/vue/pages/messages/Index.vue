@@ -32,8 +32,10 @@
 </template>
 
 <script>
-import {useForm, useHttp} from "@inertiajs/vue3";
+import { useForm } from "@inertiajs/vue3";
 import appLayout from "../../layout/AppLayout.vue";
+import { getEcho } from "../../../echo.js"
+
 export default {
     name: "Index",
     layout: appLayout,
@@ -55,6 +57,7 @@ export default {
             _token : this.$page.props.csrf,
         });
         return {
+            chatId: this.id,
             form,
             user: this.user.data,
             messages: this.messages.data,
@@ -67,17 +70,6 @@ export default {
                 if (chat) chat.scrollTop = chat.scrollHeight
             })
         },
-        getChats(){
-            useHttp({}).get(route('message.index', this.id), {
-                onSuccess: (response) => {
-                    this.messages = response;
-                    this.scrollToBottom();
-                },
-                onError: (error) => {
-                    console.log('Error: ' + error)
-                },
-            });
-        },
         sendMessage(){
             this.form.post(route('message.store'), {
                 onSuccess: () => {
@@ -87,9 +79,14 @@ export default {
         }
     },
     mounted() {
-        window.setInterval(() => {
-            this.getChats()
-        }, 5000);
+        getEcho().private(`chat.${this.chatId}`)
+            .listen('.message-received', (event) => {
+                this.messages.data.push(event.message);
+                this.scrollToBottom();
+            });
+    },
+    beforeUnmount() {
+        getEcho().leave(`chat.${this.chatId}`);
     }
 };
 </script>
