@@ -1,7 +1,10 @@
 <template xmlns="http://www.w3.org/1999/html">
     <navigation-bar />
 
-    <slot></slot>
+
+    <main>
+        <slot />
+    </main>
 
     <Footer />
 </template>
@@ -12,6 +15,24 @@ import NavigationBar from "./NavigationBar.vue";
 import Footer from "./Footer.vue";
 </script>
 
-<style scoped lang="sass">
+<style lang="sass">
 
+::view-transition-old(root)
+    animation: 300ms ease forwards slide-fade-out
+
+::view-transition-new(root)
+    animation: 300ms ease forwards slide-fade-in
+
+main
+    view-transition-name: page-content
+
+@keyframes slide-fade-out
+    to
+        opacity: 0
+        translate: -40px
+
+@keyframes slide-fade-in
+    from
+        opacity: 0
+        translate: 40px
 </style>
