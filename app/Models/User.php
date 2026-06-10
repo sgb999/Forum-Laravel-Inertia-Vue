@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\{Table, Fillable, Hidden};
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\{ HasMany, MorphMany, MorphOne };
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -11,26 +12,16 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\MediaLibrary\{ HasMedia, InteractsWithMedia };
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
-use Storage;
 
+#[Table(name: 'users')]
+#[Fillable(['name', 'username', 'email', 'password'])]
+#[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements HasMedia
 {
     use HasApiTokens;
     use HasFactory;
     use InteractsWithMedia;
     use Notifiable;
-
-    protected $fillable = [
-        'name',
-        'username',
-        'email',
-        'password',
-    ];
-
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
 
     protected $casts = [
         'email_verified_at' => 'datetime',
