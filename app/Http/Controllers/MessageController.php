@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
+use App\Events\MessageReceived;
 use App\Http\Requests\MessageStoreRequest;
 use App\Models\Chat;
 use App\Models\Message;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\RedirectResponse;
 
 class MessageController extends Controller
 {
@@ -28,7 +28,9 @@ class MessageController extends Controller
         $validated += ['user_id' => auth()->id()];
         $chat       = Chat::find($validated['chat_id']);
         abort_unless($chat->user_id_1 === auth()->id() || $chat->user_id_2 === auth()->id(), 403);
-        Message::create($validated);
+        $message = Message::create($validated);
+
+        broadcast(new MessageReceived($message));
 
         return back();
     }

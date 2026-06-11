@@ -4,7 +4,7 @@
     <h1>Chats</h1>
     <hr>
     <div v-for="chat in chats">
-        <inertia-link :href="route('chat.show', chat.id)">{{ chat.username }}</inertia-link>
+        <inertia-link :href="route('chat.index', chat.id)">{{ chat.username }}</inertia-link>
         <hr />
     </div>
     </div>
