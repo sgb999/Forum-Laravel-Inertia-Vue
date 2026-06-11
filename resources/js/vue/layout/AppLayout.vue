@@ -17,10 +17,10 @@ import Footer from "./Footer.vue";
 
 <style lang="sass">
 
-::view-transition-old(root)
+::view-transition-old(page-content)
     animation: 300ms ease forwards slide-fade-out
 
-::view-transition-new(root)
+::view-transition-new(page-content)
     animation: 300ms ease forwards slide-fade-in
 
 main
