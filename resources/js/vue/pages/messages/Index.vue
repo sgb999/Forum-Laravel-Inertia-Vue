@@ -84,6 +84,7 @@ export default {
                 this.messages.data.push(event.message);
                 this.scrollToBottom();
             });
+        this.scrollToBottom();
     },
     beforeUnmount() {
         getEcho().leave(`chat.${this.chatId}`);
