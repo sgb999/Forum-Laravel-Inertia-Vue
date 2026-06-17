@@ -6,63 +6,81 @@
                 <h1>Login</h1>
             </div>
             <div class="card-body">
-                <form @submit.prevent>
+                <Form :action="route('login.post')"
+                      method="post"
+                      disableWhileProcessing
+                      @success="successfulLogin"
+                      @error="failedLogin"
+                      #default = '{
+                        processing,
+                        errors
+                }'>
                     <div class="form-floating mb-3">
-                        <input id="email" name="email" v-model="form.email" class="form-control" type="email" placeholder="example@example.com" minlength="8" maxlength="255" required>
+                        <input id="email" name="email" v-model="email" class="form-control" type="email" placeholder="example@example.com" minlength="8" maxlength="255" required>
                         <label for="email">E-mail</label>
-                        <div v-if="form.errors.email" class="alert-danger">{{ form.errors.email }}</div>
+                        <div v-if="errors.email" class="alert-danger">
+                            <ul>
+                                <li>{{ errors.email }}</li>
+                            </ul>
+                        </div>
                     </div>
                     <div class="form-floating">
-                        <input id="password" name="password" v-model="form.password" class="form-control" type="password" placeholder="minimum 8 characters"  maxlength="255" required>
+                        <input id="password" name="password" v-model="password" class="form-control" type="password" placeholder="minimum 8 characters"  maxlength="255" required>
                         <label for="password">Password</label>
                     </div>
-                    <button data-testid="login-button" class="btn button-dark mt-2 float-end" :disabled="form.processing || form.email === '' || form.password === ''" v-on:click="login">Login</button>
-                </form>
+                    <button data-testid="login-button" class="btn button-dark mt-2 float-end" :disabled="disableButton() || processing" type="submit">Login</button>
+                </Form>
             </div>
         </div>
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions, ref } from "vue";
+
+// Inertia
+import { Form } from "@inertiajs/vue3"
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
-import { useForm } from "@inertiajs/vue3"
-export default {
-    name: "Login",
-    layout: appLayout,
-    data() {
-        let form = useForm({
-            email : '',
-            password : '',
-            _token : this.$page.props.csrf,
-        });
-        return {
-            errors: [],
-            form
-        }
-    },
-    methods: {
-        login(){
-            this.form.post(route('login.post'), {
-                onSuccess: () => {
-                    this.$swal({
-                        title: 'You are now logged in!',
-                        text: '',
-                        icon: 'success',
-                        timer: 3000
-                    });
-                },
-                onError: () => {
-                    this.$swal({
-                        title: 'The provided credentials do not match our records.',
-                        text: '',
-                        icon: 'error',
-                        timer: 3000
-                    });
-                }
-            });
-        }
-    }
-};
+
+// Components
+import Swal from 'sweetalert2';
+
+defineOptions({
+    name: 'Login',
+    layout: appLayout
+});
+
+let email = ref('');
+let password = ref('');
+
+function disableButton(): boolean
+{
+    return email.value === '' || password.value === '';
+}
+
+function successfulLogin(): void
+{
+    Swal.fire({
+        title: 'You are now logged in!',
+        text: '',
+        icon: 'success',
+        timer: 3000
+    });
+}
+
+function failedLogin(): void
+{
+    Swal.fire({
+        title: 'The provided credentials do not match our records.',
+        text: '',
+        icon: 'error',
+        timer: 3000
+    });
+}
 </script>
 
 <style scoped lang="sass">

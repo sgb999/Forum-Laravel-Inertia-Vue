@@ -75,17 +75,22 @@
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions } from "vue";
+
+// Inertia
+import { Form } from "@inertiajs/vue3"
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
-// Import Vue FilePond
+
+
+// Components
 import vueFilePond from "vue-filepond";
-// Import FilePond styles
 import "filepond/dist/filepond.min.css";
-// Import FilePond plugins
-// Please note that you need to install these plugins separately
-// Import image preview plugin styles
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css";
-// Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import FilePondPluginImagePreview from "filepond-plugin-image-preview";
 // Create component
@@ -93,26 +98,11 @@ const FilePond = vueFilePond(
     FilePondPluginFileValidateType,
     FilePondPluginImagePreview,
 );
-import { Form } from "@inertiajs/vue3"
-export default {
+
+defineOptions({
     name: "Register",
-    layout: appLayout,
-    components: {
-        Form,
-        FilePond
-    },
-    methods: {
-      /**
-        disableButton() {
-            return this.form.processing
-                || this.form.name === ''
-                || this.form.username === ''
-                || this.form.email === ''
-                || this.form.password === ''
-                || this.form.password_confirmation === ''
-        }*/
-    }
-};
+    layout: appLayout
+});
 </script>
 
 <style scoped lang="sass">

@@ -9,10 +9,12 @@
     <Footer />
 </template>
 
-<script setup>
+<script setup lang="ts">
 
+// Components
 import NavigationBar from "./NavigationBar.vue";
 import Footer from "./Footer.vue";
+
 </script>
 
 <style lang="sass">

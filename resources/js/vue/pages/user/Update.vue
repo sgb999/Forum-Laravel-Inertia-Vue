@@ -15,7 +15,7 @@
                     isDirty,
                     errors
                   }'
-                  @success="resetBanner && sweetAlertSuccess('banner')"
+                  @success="$refs.bannerPond.removeFiles() && sweetAlertSuccess('banner')"
                   @error="sweetAlertError('banner')">
                 <div class="row">
                     <label for="name">Profile Banner</label>
@@ -195,87 +195,76 @@
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Inertia
+import { router, Form } from "@inertiajs/vue3"
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
-import { Form } from "@inertiajs/vue3"
 
-
+// Components
+import Swal from 'sweetalert2';
 import vueFilePond from "vue-filepond";
-
-// Import FilePond styles
 import "filepond/dist/filepond.min.css";
-
-// Import FilePond plugins
-// Please note that you need to install these plugins separately
-
-// Import image preview plugin styles
 import "filepond-plugin-image-preview/dist/filepond-plugin-image-preview.min.css";
 import FilePondPluginImageValidateSize from 'filepond-plugin-image-validate-size';
-// Import image preview and file type validation plugins
 import FilePondPluginFileValidateType from "filepond-plugin-file-validate-type";
 import FilePondPluginImagePreview from "filepond-plugin-image-preview";
 
-// Create component
+// Types
+import { Resource } from "../../types/Resource";
+import { User } from "../../types/User";
+import { SweetAlertResult } from 'sweetalert2';
+
+
+defineOptions({
+    name: "Update",
+    layout: appLayout
+});
+
+const props = defineProps<{
+    user: Resource<User>
+}>();
+
 const FilePond = vueFilePond(
     FilePondPluginFileValidateType,
     FilePondPluginImagePreview,
     FilePondPluginImageValidateSize
 );
-export default {
-    name: "Update",
-    layout: appLayout,
-    components: {
-        Form,
-        FilePond
-    },
-    props: {
-        user: {
-            required: true
+
+function deleteProfile(): void
+{
+    Swal.fire({
+        title: 'Are you sure you want to delete your profile?',
+        text: 'This cannot be undone!',
+        icon: 'warning',
+        showConfirmButton: true,
+        showCancelButton: true
+    }).then((result: SweetAlertResult) => {
+        if (result.isConfirmed) {
+            router.delete(route('user.destroy', props.user.data.id));
         }
-    },
-    methods:{
-        resetBanner() {
-            this.$refs.bannerPond.removeFiles();
-        },
-        resetAvatar() {
-            this.$refs.avatarPond.removeFiles();
-        },
-        deleteProfile() {
-            this.$swal({
-                title: 'Are you sure you want to delete your profile?',
-                text: 'This cannot be undone!',
-                icon: 'warning',
-                showConfirmButton: true,
-                showCancelButton: true,
-                dangerMode: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Inertia.delete(route('user.destroy', this.user.id));
-                } else {
-                    return false;
-                }
-            });
-        },
-        sweetAlertSuccess(message)
-        {
-            this.$swal({
-                title: 'Your ' + message + ' has been updated!',
-                text: '',
-                icon: 'success',
-                timer: 3000
-            });
-        },
-        sweetAlertError(message)
-        {
-            this.$swal({
-                title: 'Ooops, something went wrong updating your ' + message,
-                text: '',
-                icon: 'error',
-                timer: 3000
-            });
-        }
-    }
-};
+    });
+}
+function sweetAlertSuccess(message: string): void
+{
+    Swal.fire({
+        title: 'Your ' + message + ' has been updated!',
+        text: '',
+        icon: 'success',
+        timer: 3000
+    });
+}
+function sweetAlertError(message: string): void
+{
+    Swal.fire({
+        title: 'Ooops, something went wrong updating your ' + message,
+        text: '',
+        icon: 'error',
+        timer: 3000
+    });
+}
 </script>
 
 <style scoped lang="sass">

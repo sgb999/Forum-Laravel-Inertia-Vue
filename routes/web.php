@@ -19,7 +19,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', [PostController::class, 'show'])->name('post.show');
 Route::get('/view-post/{post}', [PostController::class, 'index'])->name('post.index');
 Route::get('/categories', [CategoryController::class, 'show'])->name('categories.show');
-Route::get('/user/profile/{username}', [UserController::class, 'profile'])->name('user.profile');
+Route::get('/user/profile/{user:username}', [UserController::class, 'profile'])->name('user.profile');
 
 /*
 |--------------------------------------------------------------------------

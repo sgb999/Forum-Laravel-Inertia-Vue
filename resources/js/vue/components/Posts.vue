@@ -15,26 +15,27 @@
                 <inertia-link :href="route('post.show', { category_id : topic.category.id })">
                     <p>{{ topic.category.name }}</p>
                 </inertia-link>
-                <p>{{ this.formatDate(topic.createdAt) }}</p>
+                <p>{{ formatDate(topic.createdAt) }}</p>
             </div>
         </div>
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Components
 import PageLoader from "./PageLoader.vue";
-export default {
-    name: "Posts",
-    components:{
-      PageLoader
-    },
-    props:{
-        topics: {
-            type: Array,
-            required: false
-        }
-    }
-};
+
+// Types
+import { Post } from "../types/Post";
+
+defineOptions({
+    name: "Posts"
+});
+
+defineProps<{
+    topics: Post[] | []
+}>();
 </script>
 
 <style lang="sass" scoped>

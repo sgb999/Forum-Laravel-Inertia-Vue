@@ -12,7 +12,7 @@ export default defineConfig({
     plugins: [
         laravel([
             'resources/sass/app.scss',
-            'resources/js/app.js',
+            'resources/js/app.ts',
         ]),
         inertia({
             ssr: false
@@ -28,7 +28,8 @@ export default defineConfig({
     ],
     resolve: {
         alias: {
-            '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap')
+            '~bootstrap': path.resolve(__dirname, 'node_modules/bootstrap'),
+            '@': path.resolve(__dirname, 'resources/js'),
         }
     },
     server: {

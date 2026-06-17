@@ -1,17 +1,17 @@
 <template>
     <Head title="View Post" />
     <div class="container">
-        <h3>{{post.title}}</h3>
-        <p>{{post.content}}</p>
+        <h3>{{post.data.title}}</h3>
+        <p>{{post.data.content}}</p>
         <div class="user">
-            <img class="avatar" :src="post.user.profilePicture?.thumb" alt="avatar">
-            <inertia-link :href="route('user.profile', { username : post.user.username })">
-                {{post.user.username}}
+            <img class="avatar" :src="post.data.user?.profilePicture?.thumb" alt="avatar">
+            <inertia-link :href="route('user.profile', { username : post.data.user.username })">
+                {{post.data.user.username}}
             </inertia-link>
-            <p>{{ this.formatDate(post.createdAt) }}</p>
+            <p>{{ formatDate(post.data.createdAt) }}</p>
         </div>
-        <div v-if="post.user.id === $page.props.auth.user.id" class="mt-3">
-            <inertia-link :href="route('post.edit', post.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
+        <div v-if="post.data.user.id === page.props.auth.user.id" class="mt-3">
+            <inertia-link :href="route('post.edit', post.data.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
             <button class="btn btn-danger" @click="deletePost">Delete</button>
         </div>
         <hr>
@@ -22,62 +22,63 @@
             <template #fallback>
                 <page-loader />
             </template>
-            <comment :postId="post.id" :comments="comments"/>
+            <comment :postId="post.data.id" :comments="comments"/>
         </Deferred>
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions, defineProps} from "vue";
+
+// Inertia
+import { router, Deferred, usePage } from "@inertiajs/vue3";
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
-import { useForm, Deferred } from "@inertiajs/vue3";
+
+// Components
 import Comment from "../../components/Comment.vue";
 import PageLoader from "../../components/PageLoader.vue";
-export default {
+
+// Types
+import { Resource } from "../../types/Resource";
+import { Post } from "../../types/Post";
+import { Paginated } from "../../types/Pagination";
+import { Comment as CommentInterface } from "../../types/Comment";
+
+// Composables
+import Swal from 'sweetalert2';
+import type { SweetAlertResult } from 'sweetalert2';
+
+
+defineOptions({
     name: "Index",
-    layout: appLayout,
-    props:{
-        post: {
-            required: true
-        },
-        comments: {
-            required: true
+    layout: appLayout
+});
+
+const props = defineProps<{
+    post: Resource<Post>,
+    comments?: Paginated<CommentInterface>;
+}>();
+
+const page = usePage();
+
+function deletePost(): void {
+    Swal.fire({
+        title: 'Are you sure you want to delete your post?',
+        text: 'Your post will be gone forever!',
+        icon: 'warning',
+        showConfirmButton: true,
+        showCancelButton: true
+    }).then((result: SweetAlertResult) => {
+        if (result.isConfirmed) {
+            router.delete(route('post.destroy', { post: props.post.data?.id }));
         }
-    },
-    components: {
-        PageLoader,
-        Comment,
-        Deferred
-    },
-    data(){
-        let form = useForm({
-            _token : this.$page.props.csrf
-        });
-        return {
-            post: this.post.data,
-            avatar: '',
-            form
-        }
-    },
-    methods: {
-        deletePost(){
-            this.$swal({
-                title: 'Are you sure you want to delete your post?',
-                text: 'Your post will be gone forever!',
-                icon: 'warning',
-                showConfirmButton: true,
-                showCancelButton: true,
-                dangerMode: true
-            }).then((result) => {
-                if(result.isConfirmed){
-                    this.form.delete(route('post.destroy', { post: this.post.data.id }));
-                }
-                else{
-                    return false;
-                }
-            });
-        }
-    }
-};
+    });
+}
+
 </script>
 
 <style scoped lang="sass">

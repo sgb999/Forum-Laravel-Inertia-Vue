@@ -6,10 +6,13 @@
     </div>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+// Vue
+import { defineOptions } from "vue";
+
+defineOptions({
     name: "Footer"
-};
+});
 </script>
 <style scoped lang="sass">
 .footer
