@@ -88,7 +88,7 @@ class PostController extends Controller
     public function postPage(?Post $post) : Response|ResponseFactory
     {
         return inertia('post/Upsert', [
-            'post'       => $post ? new PostResource($post?->loadMissing('category:id')) : null,
+            'post'       => $post ? new PostResource($post?->load('category:id')) : null,
             'categories' => Category::select(['id', 'name'])->get()->toArray()]
         );
     }
@@ -104,7 +104,7 @@ class PostController extends Controller
         $validated  = $request->validated();
         $post       = Post::updateOrCreate(['id' => $post?->id], array_merge($validated, ['user_id' => auth()->id()]));
 
-        return redirect()->route('post.show', $post->id);
+        return redirect()->route('post.index', $post->id);
     }
 
     /**

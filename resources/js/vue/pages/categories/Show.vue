@@ -11,25 +11,30 @@
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions, defineProps} from "vue";
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
-export default {
+
+// Types
+import { Category } from "../../types/Category";
+
+defineOptions({
     name: "Show",
-    layout: appLayout,
-    props:{
-        categories: {
-            required: true
-        }
-    }
-};
+    layout: appLayout
+});
+defineProps<{
+    categories: Category[];
+}>();
 </script>
 
-<style scoped>
-a, a:hover, a:focus, a:active {
-    text-decoration: none;
-    color: inherit;
-}
-h3{
-    text-decoration: underline;
-}
+<style scoped lang="sass">
+a, a:hover, a:focus, a:active
+    text-decoration: none
+    color: inherit
+h3
+    text-decoration: underline
 </style>
