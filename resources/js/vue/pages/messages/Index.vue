@@ -34,7 +34,7 @@
 <script>
 import { useForm } from "@inertiajs/vue3";
 import appLayout from "../../layout/AppLayout.vue";
-import { getEcho } from "../../../echo.js"
+import { getEcho } from "../../../echo.ts"
 
 export default {
     name: "Index",

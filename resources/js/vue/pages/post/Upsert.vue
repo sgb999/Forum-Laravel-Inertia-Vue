@@ -1,6 +1,6 @@
 <template>
     <Head><title>Make a post</title></Head>
-    <div class="container w-50">
+    <div class="container">
         <div class="card">
             <div class="card-header">
                 <h1>Create a Post</h1>
@@ -39,56 +39,67 @@
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions, defineProps } from "vue";
+
+// Inertia
+import { useForm, usePage } from "@inertiajs/vue3";
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
-import { useForm } from "@inertiajs/vue3";
-export default {
+
+// Components
+import Swal from 'sweetalert2';
+
+// Types
+import { Category } from "../../types/Category";
+import { Post } from "../../types/Post";
+import { Resource } from "../../types/Resource";
+
+defineOptions({
     name: "Upsert",
-    layout: appLayout,
-    props: {
-      categories: {
-          required: true
-      },
-        post: {
-          required: false
-        }
-    },
-    data() {
-        let form = useForm({
-            title : this.post.data.title ? this.post.data.title : '',
-            content : this.post.data.content ? this.post.data.content : '',
-            category_id : this.post.data.category ? this.post.data.category.id : '',
-            _token : this.$page.props.csrf,
-        });
-        return {
-            form,
-            categories: this.categories,
-            post: this.post.data ? this.post.data : null,
-        }
-    },
-    methods: {
-        postForm() {
-            this.form.put(route('post.upsert', this.post.data.id ? this.post.data.id : null), {
-                onSuccess: () => {
-                    this.$swal({
-                        title: this.post.data.id ? 'Your post has been updated successfully' : 'Your post has been posted!',
-                        text: '',
-                        icon: 'success'
-                    });
-                }
+    layout: appLayout
+});
+
+const props = defineProps<{
+    categories: Category[],
+    post?: Resource<Post | null>
+}>();
+
+const page = usePage();
+
+let form = useForm({
+    title: props.post?.data?.title ?? '',
+    content: props.post?.data?.content ?? '',
+    category_id: props.post?.data?.category?.id ?? '',
+    _token: page.props.csrf,
+});
+
+function postForm(): void
+{
+    form.put(route('post.upsert', props?.post?.data?.id ? { post: props.post.data.id } : {}), {
+        onSuccess: () => {
+            Swal.fire({
+                title: props?.post?.data?.id ? 'Your post has been updated successfully' : 'Your post has been posted!',
+                text: '',
+                icon: 'success'
             });
-        },
-        disableButton() {
-            return this.form.processing === true
-                || this.form.title === ''
-                || this.form.content === ''
-                || this.form.category_id === ''
         }
-    }
-};
+    });
+}
+
+function disableButton(): boolean
+{
+    return form.processing || form.title === '' || form.content === '' || form.category_id === '';
+}
 </script>
 
 <style scoped lang="sass">
+@media (min-device-width: 768px)
+    .container
+        width: 50%
 .card
     background: #242220
     color: #fff

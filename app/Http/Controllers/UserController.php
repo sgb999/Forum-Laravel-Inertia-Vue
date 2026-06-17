@@ -4,21 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\ImagePostRequest;
-use App\Http\Requests\PostFilterRequest;
-use App\Http\Requests\UserEditRequest;
-use App\Http\Requests\UserLoginRequest;
-use App\Http\Requests\UserStoreRequest;
-use App\Models\TemporaryFile;
+use App\Http\Requests\{ PostFilterRequest, UserEditRequest, UserLoginRequest, UserStoreRequest};
 use App\Models\User;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
-use Inertia\Response;
-use Inertia\ResponseFactory;
-use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\{ RedirectResponse, Request };
+use Illuminate\Support\Facades\{ Auth, DB, Hash};
+use Inertia\{ Inertia, Response, ResponseFactory};
 use Throwable;
 
 class UserController extends Controller
@@ -60,25 +50,28 @@ class UserController extends Controller
     }
 
     /**
-     * @param string $username
+     * Load user data once and defer the posts
+     *
+     * @param User $user
      * @param PostFilterRequest $request
      *
      * @return Response|ResponseFactory
      *
      * @throws Throwable
      */
-    public function profile(string $username, PostFilterRequest $request) : Response|ResponseFactory
+    public function profile(User $user, PostFilterRequest $request) : Response|ResponseFactory
     {
-        $user = User::where('username', $username)
-            ->with(['profilePicture', 'bannerPicture'])
-            ->select('id', 'username')
-            ->firstOrFail();
-
         return inertia('user/Profile', [
-                'user' => $user->toResource(),
-                'posts' => PostController::getFilteredPosts($request->merge(['user_id' => $user->id]))
-            ]
-        );
+                'user' => Inertia::once(function () use ($user) {
+                    $user->load(['profilePicture', 'bannerPicture']);
+                    unset($user->name, $user->email, $user->created_at, $user->updated_at);
+
+                    return $user->toResource();
+                }),
+                'posts' => Inertia::defer(function () use ($request, $user) {
+                    return PostController::getFilteredPosts($request->merge(['user_id' => $user->id]));
+                })
+        ]);
     }
 
     /**
@@ -126,6 +119,11 @@ class UserController extends Controller
         return back();
     }
 
+    /**
+     * @param User $user
+     *
+     * @return RedirectResponse
+     */
     public function destroy(User $user) : RedirectResponse
     {
         abort_unless($user->id === auth()->id(), 403);
@@ -134,6 +132,11 @@ class UserController extends Controller
         return back();
     }
 
+    /**
+     * @param Request $request
+     *
+     * @return RedirectResponse
+     */
     public function logOutMethod(Request $request) : RedirectResponse
     {
         Auth::guard('web')->logout();

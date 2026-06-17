@@ -16,24 +16,31 @@
     </div>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions, defineProps} from "vue";
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
+
+// Components
 import Posts from "../../components/Posts.vue";
 import Pagination from "../../layout/Pagination.vue";
-export default {
+
+// Types
+import { Paginated } from "../../types/Pagination";
+import { Post } from "../../types/Post";
+
+defineOptions({
     name: "Show",
-    layout: appLayout,
-    components: {
-        Posts,
-        Pagination
-    },
-    props:{
-        posts: {
-            type: Object,
-            required: true
-        }
-    }
-};
+    layout: appLayout
+});
+
+defineProps<{
+    posts: Paginated<Post>;
+}>();
+
 </script>
 <style lang="sass">
 button

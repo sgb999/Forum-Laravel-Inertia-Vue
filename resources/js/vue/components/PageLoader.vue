@@ -7,10 +7,14 @@
     </div>
 </template>
 
-<script>
-export default {
+<script setup lang="ts">
+
+// Vue
+import { defineOptions } from "vue";
+
+defineOptions({
     name: "PageLoader"
-};
+});
 </script>
 
 <style lang="scss" scoped>

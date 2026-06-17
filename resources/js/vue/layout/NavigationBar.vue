@@ -3,35 +3,39 @@
         <ul>
             <li><inertia-link :href="route('post.show')">Home</inertia-link></li>
             <li><inertia-link :href="route('categories.show')" prefetch>View Categories</inertia-link></li>
-            <li v-if="user" class="float-end">
+            <li v-if="isLoggedIn" class="float-end">
                 <a href="#" @click.prevent="logout">
                     <span class="bi bi-box-arrow-right red me-1"></span> Sign out
                 </a>
             </li>
-            <li v-if="user" class="float-end"><inertia-link :href="route('chat.show')" prefetch><span class="bi bi-envelope-fill yellow me-1"></span>Messages</inertia-link></li>
-            <li v-if="user" class="float-end"><inertia-link :href="route('user.profile', username)">Profile</inertia-link></li>
-            <li v-if="!user" class="float-end"><inertia-link :href="route('register.index')" prefetch ><span class="bi bi-person-fill me-1 green"></span>Sign Up</inertia-link></li>
-            <li v-if="!user" class="float-end"><inertia-link :href="route('login.index')" prefetch><span class="bi bi-box-arrow-in-right me-1 green"></span>Login</inertia-link></li>
+            <li v-if="isLoggedIn" class="float-end"><inertia-link :href="route('chat.show')" prefetch><span class="bi bi-envelope-fill yellow me-1"></span>Messages</inertia-link></li>
+            <li v-if="isLoggedIn" class="float-end"><inertia-link :href="route('user.profile', username)">Profile</inertia-link></li>
+            <li v-if="!isLoggedIn" class="float-end"><inertia-link :href="route('register.index')" prefetch ><span class="bi bi-person-fill me-1 green"></span>Sign Up</inertia-link></li>
+            <li v-if="!isLoggedIn" class="float-end"><inertia-link :href="route('login.index')" prefetch><span class="bi bi-box-arrow-in-right me-1 green"></span>Login</inertia-link></li>
         </ul>
     </nav>
 </template>
-<script>
-export default {
-    name: "NavigationBar",
-    computed: {
-        user() {
-            return this.$page.props.auth.login;
-        },
-        username(){
-            return this.$page.props.auth.user.username;
-        }
-    },
-    methods: {
-        logout() {
-            this.$inertia.post(route("logout"));
-        }
-    }
-};
+
+<script setup lang="ts">
+// Vue
+import { defineOptions, computed } from "vue";
+
+// Inertia
+import { usePage, router } from "@inertiajs/vue3";
+
+defineOptions({
+    name: "NavigationBar"
+});
+
+const page = usePage();
+
+const isLoggedIn = computed(() => page.props.auth.login);
+const username = computed(() => page.props.auth.user?.username);
+
+function logout(): void
+{
+    router.post(route('logout'));
+}
 </script>
 
 <style scoped lang="sass">

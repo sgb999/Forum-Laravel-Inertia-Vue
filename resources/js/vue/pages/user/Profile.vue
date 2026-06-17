@@ -1,7 +1,7 @@
 <template>
     <Head title="Profile" />
     <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
-    <div id="view-user-page" class="container" v-if="user.data !== null">
+    <div id="view-user-page" class="container">
         <div class="user">
             <img class="avatar" :src="user.data.profilePicture.url" alt="avatar">
             <h1>{{ user.data.username }}</h1>
@@ -13,42 +13,50 @@
     </div>
     <div class="content">
         <hr class="container">
-        <posts :topics="posts.data"></posts>
-        <div v-if="posts.data < 1" class="empty-posts">
-            <h4>There are no posts yet</h4>
-        </div>
+        <Deferred data="posts">
+            <template #fallback>
+                <page-loader />
+            </template>
+            <posts :topics="posts.data"></posts>
+            <div v-if="posts.data < 1" class="empty-posts">
+                <h4>There are no posts yet</h4>
+            </div>
+            <pagination v-if="posts.meta.links" class="container" :links="posts.meta.links"></pagination>
+        </Deferred>
     </div>
-    <pagination v-if="posts.meta.links" class="container" :links="posts.meta.links" @nextPage="getTopics($event)"></pagination>
 </template>
 
-<script>
+<script setup lang="ts">
+
+// Vue
+import { defineOptions, defineProps} from "vue";
+
+// Inertia
+import { Deferred } from "@inertiajs/vue3";
+
+// Layout
 import appLayout from "../../layout/AppLayout.vue";
+
+// Components
 import Posts from "../../components/Posts.vue";
 import Pagination from "../../layout/Pagination.vue";
-import { router } from "@inertiajs/vue3";
-export default {
+import PageLoader from "../../components/PageLoader.vue";
+
+// Types
+import { Resource } from "../../types/Resource";
+import { User } from "../../types/User";
+import { Paginated } from "../../types/Pagination";
+import { Post } from "../../types/Post";
+
+defineOptions({
     name: "Profile",
-    layout: appLayout,
-    props: {
-        user: {
-            type: Object,
-            required: true
-        },
-        posts: {
-            type: Object,
-            required: true
-        }
-    },
-    components: {
-        Posts,
-        Pagination
-    },
-    methods: {
-        getTopics(site) {
-            router.get(site);
-        }
-    }
-};
+    layout: appLayout
+});
+
+defineProps<{
+    user: Resource<User>
+    posts?: Paginated<Post>
+}>();
 </script>
 
 <style scoped lang="sass">

@@ -1,11 +1,8 @@
 import {resolvePageComponent} from "laravel-vite-plugin/inertia-helpers";
 
-import('./bootstrap');
-
-import { createApp, h } from 'vue'
+import { createApp, h, DefineComponent } from 'vue'
 import {createInertiaApp, Link, Head, useHttp} from '@inertiajs/vue3'
-import { Ziggy } from './ziggy';
-//import { ZiggyVue } from '../../vendor/tightenco/ziggy/dist/vue.m';
+import { route } from 'ziggy-js';
 import VueSweetalert2 from 'vue-sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import moment from "moment/moment";
@@ -14,30 +11,32 @@ await useHttp({}).get('/sanctum/csrf-cookie');
 
 createInertiaApp({
     id: 'app',
-    resolve: name => resolvePageComponent(
-        `/resources/js/vue/pages/${name}.vue`,
-        import.meta.glob('/resources/js/vue/pages/**/*.vue')
-    ),
+        resolve: name => resolvePageComponent(
+            `/resources/js/vue/pages/${name}.vue`,
+            import.meta.glob('/resources/js/vue/pages/**/*.vue')
+        ) as Promise<DefineComponent>,
     defaults: {
-        // @ts-ignore
         visitOptions: () => {
             return { viewTransition: true }
         },
     },
     setup({ el, App, props, plugin }) {
         const app = createApp({ render: () => h(App, props) })
-            .mixin({methods: {route: window.route}})
+            .mixin({
+                methods: {
+                    route: (name: string, params: Parameters<typeof route>[1] ) => route(name, params)
+                }
+            })
             .use(VueSweetalert2)
-            .use(Ziggy)
             .use(plugin)
             .component('inertia-link', Link)
             .component('Head', Head);
 
-        app.config.globalProperties.formatDate = (value) => {
+        app.config.globalProperties.formatDate = (value: string) => {
             return moment.utc(String(value)).local().format('DD/MM/YYYY H:mm a')
         }
         app.mount(el)
     },
     title: title => `Forum - ${title}`
-})
+});
 
