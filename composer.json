@@ -25,6 +25,7 @@
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",
         "fruitcake/laravel-debugbar": "^4.4",
+        "laravel/vet": "^0.2.0",
         "mockery/mockery": "^1.6.12",
         "nunomaduro/collision": "^8.8",
         "opsway/psr12-strict-coding-standard": "^0.7.0",
@@ -72,6 +73,7 @@
         "sort-packages": true,
         "allow-plugins": {
             "dealerdirect/phpcodesniffer-composer-installer": true,
+            "laravel/vet": true,
             "pestphp/pest-plugin": true
         }
     },
