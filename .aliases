@@ -1,0 +1,4 @@
+alias composer='docker compose exec app composer'
+alias php='docker compose exec app php'
+alias pnpm='docker compose exec vite pnpm'
+alias sh-app='docker compose exec app sh'
