@@ -1,0 +1,6 @@
+alias composer='docker compose exec app composer'
+alias php='docker compose exec app php'
+alias pnpm='docker compose exec vite pnpm'
+alias sh-app='docker compose exec app sh'
+alias pest-browser='docker compose run --rm browser'
+alias pest='docker compose run --rm browser php artisan test tests/Unit tests/Feature tests/Browser'

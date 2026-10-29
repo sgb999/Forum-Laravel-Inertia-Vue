@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+
+# Runs the full Pest suite (unit, feature, browser) before every push.
+# Bypass only when unavoidable: git push --no-verify
+
+set -euo pipefail
+
+if ! docker info >/dev/null 2>&1; then
+    echo "Docker is not running, so the test suite cannot run. Push aborted." >&2
+    exit 1
+fi
+
+vite_reachable() {
+    curl -s -o /dev/null http://localhost:5173/@vite/client
+}
+
+if [ -f public/hot ] && ! vite_reachable; then
+    echo "Vite is not running; starting it for the browser tests..."
+
+    docker compose up -d vite >/dev/null
+
+    for _ in $(seq 1 30); do
+        vite_reachable && break
+        sleep 1
+    done
+
+    if ! vite_reachable; then
+        echo "Vite did not become reachable on :5173. Push aborted." >&2
+        exit 1
+    fi
+fi
+
+echo "Running the test suite before push..."
+
+if ! docker compose run --rm browser php artisan test tests/Unit tests/Feature tests/Browser --compact; then
+    echo "Tests failed. Push aborted (use git push --no-verify to bypass)." >&2
+    exit 1
+fi
