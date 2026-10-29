@@ -15,3 +15,5 @@ yarn-error.log
 .vscode
 public/build
 .pnpm-store
+
+tests/Browser/Screenshots

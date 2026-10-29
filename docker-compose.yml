@@ -18,7 +18,7 @@ services:
         <<: *app-env
         volumes:
             - .:/var/www/html
-        command: php-fpm && php artisan migrate
+        command: php-fpm
         depends_on:
             mysql:
                 condition: service_healthy
@@ -53,6 +53,21 @@ services:
             - .:/var/www/html
             - pnpm-store:/root/.local/share/pnpm/store
         networks: [laravel]
+
+    # Pest browser tests. Debian-based because Playwright's Chromium has no
+    # musl build; host networking lets Chromium reach the Vite dev server.
+    browser:
+        build:
+            context: .
+            dockerfile: docker/php/Dockerfile
+            target: browser
+        <<: *app-env
+        network_mode: host
+        user: "${BROWSER_UID:-1000}:${BROWSER_GID:-1000}"
+        working_dir: /var/www/html
+        volumes:
+            - .:/var/www/html
+        profiles: [testing]
 
     mysql:
         image: mysql:latest
@@ -120,8 +135,7 @@ services:
         <<: *app-env
         volumes:
             - .:/var/www/html
-        entrypoint: ["/bin/sh", "-c"]
-        command: ["while true; do php artisan schedule:run --verbose --no-interaction; sleep 60; done"]
+        command: php artisan schedule:work
         restart: unless-stopped
         depends_on:
             - app
