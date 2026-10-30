@@ -20,6 +20,21 @@ pest()->extend(TestCase::class)
 
 /*
 |--------------------------------------------------------------------------
+| Feature Tests
+|--------------------------------------------------------------------------
+|
+| Page renders go through the Inertia layout, which looks up Vite entries.
+| CI does not build assets for this suite, and the dev server hot file is
+| what makes the same tests pass locally.
+|
+*/
+
+uses()->beforeEach(function () {
+    $this->withoutVite();
+})->in('Feature');
+
+/*
+|--------------------------------------------------------------------------
 | Browser Tests
 |--------------------------------------------------------------------------
 |
