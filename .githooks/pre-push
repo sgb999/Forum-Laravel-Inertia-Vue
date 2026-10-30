@@ -1,12 +1,39 @@
 #!/usr/bin/env bash
 
 # Runs the full Pest suite (unit, feature, browser) before every push.
-# Bypass only when unavoidable: git push --no-verify
+# Bypass only when unavoidable: git push --no-verify, or set SKIP_PRE_PUSH=1
+# (useful for sandboxed GUI clients that cannot reach the Docker daemon).
 
 set -euo pipefail
 
-if ! docker info >/dev/null 2>&1; then
-    echo "Docker is not running, so the test suite cannot run. Push aborted." >&2
+if [ "${SKIP_PRE_PUSH:-}" = "1" ]; then
+    echo "Pre-push tests skipped (SKIP_PRE_PUSH=1)." >&2
+    exit 0
+fi
+
+# Resolve the docker CLI even if the caller's PATH doesn't include it
+# (GUI clients such as Flatpak apps may have a reduced PATH).
+DOCKER_BIN=""
+for candidate in /usr/local/bin/docker /usr/bin/docker; do
+    if [ -x "$candidate" ]; then
+        DOCKER_BIN="$candidate"
+        break
+    fi
+done
+
+if [ -z "$DOCKER_BIN" ] && command -v docker >/dev/null 2>&1; then
+    DOCKER_BIN="$(command -v docker)"
+fi
+
+if [ -z "$DOCKER_BIN" ]; then
+    echo "Docker CLI not found (checked PATH, /usr/local/bin and /usr/bin). Is Docker installed?" >&2
+    exit 1
+fi
+
+if ! "$DOCKER_BIN" info >/dev/null 2>&1; then
+    echo "Cannot reach the Docker daemon via $DOCKER_BIN. The daemon may be stopped," >&2
+    echo "(start it with 'systemctl start docker'), or this environment (e.g. a sandboxed" >&2
+    echo "GUI client) cannot access /var/run/docker.sock." >&2
     exit 1
 fi
 
@@ -17,7 +44,7 @@ vite_reachable() {
 if [ -f public/hot ] && ! vite_reachable; then
     echo "Vite is not running; starting it for the browser tests..."
 
-    docker compose up -d vite >/dev/null
+    "$DOCKER_BIN" compose up -d vite >/dev/null
 
     for _ in $(seq 1 30); do
         vite_reachable && break
@@ -32,7 +59,7 @@ fi
 
 echo "Running the test suite before push..."
 
-if ! docker compose run --rm browser php artisan test tests/Unit tests/Feature tests/Browser --compact; then
+if ! "$DOCKER_BIN" compose run --rm browser php artisan test tests/Unit tests/Feature tests/Browser --compact; then
     echo "Tests failed. Push aborted (use git push --no-verify to bypass)." >&2
     exit 1
 fi
