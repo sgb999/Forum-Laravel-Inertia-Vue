@@ -1,13 +1,19 @@
 {
     "mcpServers": {
-        "lerd": {
+        "laravel-boost": {
+            "command": "php",
             "args": [
-                "mcp"
-            ],
-            "command": "lerd",
-            "env": {
-                "LERD_SITE_PATH": "/home/liam/Forum-Laravel-Inertia-Vue"
-            }
+                "artisan",
+                "boost:mcp"
+            ]
+        },
+        "nightwatch": {
+            "command": "npx",
+            "args": [
+                "-y",
+                "mcp-remote",
+                "https://nightwatch.laravel.com/mcp"
+            ]
         }
     }
 }
