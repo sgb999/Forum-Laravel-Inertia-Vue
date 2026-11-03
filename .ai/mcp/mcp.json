@@ -1,13 +1,28 @@
 {
-    "mcpServers": {
-        "lerd": {
-            "args": [
-                "mcp"
-            ],
-            "command": "lerd",
-            "env": {
-                "LERD_SITE_PATH": "/home/liam/Forum-Laravel-Inertia-Vue"
-            }
-        }
+  "mcpServers": {
+    "lerd": {
+      "command": "lerd",
+      "args": [
+        "mcp"
+      ],
+      "env": {
+        "LERD_SITE_PATH": "/home/liam/Forum-Laravel-Inertia-Vue"
+      }
+    },
+    "laravel-boost": {
+      "command": "/usr/local/bin/php",
+      "args": [
+        "/var/www/html/artisan",
+        "boost:mcp"
+      ]
+    },
+    "nightwatch": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://nightwatch.laravel.com/mcp"
+      ]
     }
+  }
 }

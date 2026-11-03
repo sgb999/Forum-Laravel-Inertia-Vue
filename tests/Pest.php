@@ -1,6 +1,7 @@
 <?php
 
 use Tests\TestCase;
+use Tightenco\Ziggy\BladeRouteGenerator;
 
 /*
 |--------------------------------------------------------------------------
@@ -16,6 +17,35 @@ use Tests\TestCase;
 pest()->extend(TestCase::class)
   ->use(Illuminate\Foundation\Testing\RefreshDatabase::class)
     ->in('Feature', 'Unit', 'Browser');
+
+/*
+|--------------------------------------------------------------------------
+| Feature Tests
+|--------------------------------------------------------------------------
+|
+| Page renders go through the Inertia layout, which looks up Vite entries.
+| CI does not build assets for this suite, and the dev server hot file is
+| what makes the same tests pass locally.
+|
+*/
+
+uses()->beforeEach(function () {
+    $this->withoutVite();
+})->in('Feature');
+
+/*
+|--------------------------------------------------------------------------
+| Browser Tests
+|--------------------------------------------------------------------------
+|
+| Ziggy emits its global script only once per process, which breaks every
+| visit after the first in Pest's long-running browser server.
+|
+*/
+
+uses()->beforeEach(function () {
+    BladeRouteGenerator::$generated = false;
+})->in('Browser');
 
 /*
 |--------------------------------------------------------------------------

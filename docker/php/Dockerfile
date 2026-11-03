@@ -20,6 +20,7 @@ RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     && ln -snf /usr/share/zoneinfo/UTC /etc/localtime \
     && echo "UTC" > /etc/timezone
 
+RUN composer install --no-dev --no-interaction --prefer-dist --no-autoloader --no-scripts
 COPY . .
 RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 
@@ -37,8 +38,6 @@ RUN pnpm run build
 
 ##############################################
 # Stage 2b: Frontend dev image (used by the `vite` service in compose)
-# Same pnpm setup as above, but no COPY - code is bind-mounted so the
-# container starts instantly and picks up changes live.
 ##############################################
 FROM node:22-alpine AS frontend-dev
 RUN corepack enable && corepack prepare pnpm@latest --activate
@@ -93,8 +92,6 @@ CMD ["php-fpm"]
 
 ##############################################
 # Stage 4: Development image
-# (code is bind-mounted in docker-compose.yml, this stage mainly gives
-#  us composer + xdebug for local work)
 ##############################################
 FROM base AS development
 
@@ -107,18 +104,51 @@ COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/99-xdebug.ini
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 ##############################################
-# Stage 5: Production image
-# (self-contained, no bind mounts, code + vendor + built assets baked in)
+# Stage 5: Production image (Kamal 2 / Self-contained)
+# Includes Nginx and Supervisord to serve web traffic directly on port 80,
+# while supporting custom commands for worker, scheduler, and reverb roles.
 ##############################################
 FROM base AS production
 
 ENV APP_ENV=production
 
+RUN apk update && apk add --no-cache nginx supervisor
+
+COPY docker/nginx/nginx-prod.conf /etc/nginx/http.d/default.conf
+COPY docker/php/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY docker/php/opcache-prod.ini /usr/local/etc/php/conf.d/99-z-opcache-prod.ini
+
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
-COPY docker/php/opcache-prod.ini /usr/local/etc/php/conf.d/99-z-opcache-prod.ini
 
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache
+RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+    && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
-USER www-data
+EXPOSE 80 8080
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
+
+##############################################
+# Stage 6: Browser test runner (Pest + Playwright)
+# Debian-based because Playwright's Chromium has no musl build.
+##############################################
+FROM php:8.5-cli AS browser
+
+COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends nodejs npm \
+    && rm -rf /var/lib/apt/lists/* \
+    && chmod +x /usr/local/bin/install-php-extensions \
+    && install-php-extensions pdo_sqlite mbstring sockets pcntl gd
+
+RUN npm install -g playwright@1.59.1 \
+    && PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright install --with-deps chromium \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+WORKDIR /var/www/html
+
+CMD ["php", "artisan", "test", "tests/Browser"]
