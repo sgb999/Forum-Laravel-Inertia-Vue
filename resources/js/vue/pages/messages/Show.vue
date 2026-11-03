@@ -26,7 +26,7 @@ export default {
 
 <style scoped lang="sass">
 a
-    color: #FFFFFF
+    color: var(--color-text)
     text-decoration: none
     font-size: 20px
 

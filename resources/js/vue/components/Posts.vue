@@ -44,13 +44,13 @@ a, a:hover, a:focus, a:active
     color: inherit
 .container
     display: grid
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr))
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr))
     grid-column-gap: 20px
     grid-row-gap: 15px
     height: fit-content
     .card
-        background: #242220
-        color: #fff
+        background: var(--color-surface-alt)
+        color: var(--color-text)
         border-radius: 25px
         animation: posts-load running 500ms
         transition: transform 0.8s, box-shadow 0.8s
