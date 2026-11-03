@@ -95,14 +95,14 @@ export default {
 <style scoped lang="sass">
 a
     text-decoration: none
-    color: #FFFFFF
+    color: var(--color-text)
 .chat-area
     height: 60vh
     padding: 24px 20px
     display: flex
     flex-direction: column
     gap: 12px
-    border-bottom: 1px solid #2A2724
+    border-bottom: 1px solid var(--color-border)
 .msg-row
     display: flex
 .sent
@@ -119,27 +119,27 @@ a
     color: #E8F1FC
     border-radius: 14px 14px 4px 14px
 .bubble.received
-    background: #242220
+    background: var(--color-surface-alt)
     color: #C8C4BC
     border-radius: 14px 14px 14px 4px
-    border: 1px solid #2E2B28
+    border: 1px solid var(--color-raised)
 .avatar
     height: 150px
     width: 150px
     border-radius: 50%
-    border: solid 2px #FFFFFF
+    border: solid 2px var(--color-text)
     margin-right: 20px
 .message-box
-    background: #242220
-    color: #fff
+    background: var(--color-surface-alt)
+    color: var(--color-text)
     label
-        color: #6B6760
+        color: var(--color-text-subtle)
     textarea
         height: 100px
-        background: #1b1a1f
-        color: #fff
-        caret-color: #ffffff
-        border-color: #6B6760
+        background: var(--color-input)
+        color: var(--color-text)
+        caret-color: var(--color-text)
+        border-color: var(--color-text-subtle)
         &:focus
             box-shadow: none
             outline: 0

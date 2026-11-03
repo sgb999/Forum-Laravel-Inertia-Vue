@@ -82,15 +82,15 @@ function deletePost(): void {
     padding: 10px
     width: fit-content
     border-radius: 10px
-    background-color: #2A2724
+    background-color: var(--color-border)
     a
         text-decoration: underline
-        color: #fff
+        color: var(--color-text)
     .avatar
         height: 32px
         width: 32px
         border-radius: 50%
-        border: solid 2px #FFFFFF
+        border: solid 2px var(--color-text)
         margin-right: 20px
         color: rgb(228, 230, 235)
     p
@@ -102,7 +102,7 @@ a
 hr
     font-weight: bold
 .btn-style
-    color: #ffffff
+    color: var(--color-text)
 #edit
     width: 70px
 </style>
