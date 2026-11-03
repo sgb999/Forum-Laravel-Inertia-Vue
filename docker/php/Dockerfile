@@ -29,7 +29,7 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 ##############################################
 FROM node:22-alpine AS frontend
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
@@ -40,7 +40,7 @@ RUN pnpm run build
 # Stage 2b: Frontend dev image (used by the `vite` service in compose)
 ##############################################
 FROM node:22-alpine AS frontend-dev
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 WORKDIR /var/www/html
 
 ##############################################
