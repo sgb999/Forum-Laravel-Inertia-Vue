@@ -41,9 +41,6 @@
 
 <script setup lang="ts">
 
-// Vue
-import { defineOptions, defineProps } from "vue";
-
 // Inertia
 import { useForm, usePage } from "@inertiajs/vue3";
 

@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 // Vue
-import { defineOptions, computed } from "vue";
+import { computed } from "vue";
 
 // Inertia
 import { usePage, router } from "@inertiajs/vue3";
