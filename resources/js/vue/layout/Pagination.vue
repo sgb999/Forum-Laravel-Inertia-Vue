@@ -16,7 +16,7 @@
                 </inertia-link>
             </li>
             <li class="page-item">
-                <inertia-link v-if="links[links.length - 1].url" :href="links[links.length - 1].url" preserveState
+                <inertia-link v-if="links[links.length - 1].url" :href="links[links.length - 1].url!" preserveState
                               :class="{'btn button-dark' :  links[links.length - 1].url, 'font-bold' : links[links.length - 1].active}">
                     {{ links[links.length - 1].label}}
                 </inertia-link>
@@ -38,7 +38,7 @@ defineOptions({
 });
 
 defineProps<{
-    links: PaginationLink
+    links: PaginationLink[]
 }>();
 
 </script>

@@ -30,7 +30,7 @@ defineOptions({
 const page = usePage();
 
 const isLoggedIn = computed(() => page.props.auth.login);
-const username = computed(() => page.props.auth.user?.username);
+const username = computed(() => page.props.auth.user.username ?? undefined);
 
 function logout(): void
 {
