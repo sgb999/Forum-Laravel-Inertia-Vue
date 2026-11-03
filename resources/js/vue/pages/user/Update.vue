@@ -1,21 +1,21 @@
 <template>
-    <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
+    <img v-if="user.data.bannerPicture" class="banner" :src="user.data.bannerPicture.url" alt="banner">
     <div id="update-profile-page" class="container">
         <div class="user">
-            <img class="avatar" :src="user.data.profilePicture.url" alt="avatar">
+            <img v-if="user.data.profilePicture" class="avatar" :src="user.data.profilePicture.url" alt="avatar">
             <h1 id="name-tag">{{ user.data.name }}</h1>
             <h1 id="username-tag">{{ user.data.username }}</h1>
             <h1 id="email-tag">{{ user.data.email }}</h1>
         </div>
       <hr />
         <div>
-            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', authUserId)" method="put"
                   #default = '{
                     processing,
                     isDirty,
                     errors
                   }'
-                  @success="$refs.bannerPond.removeFiles() && sweetAlertSuccess('banner')"
+                  @success="clearPond(bannerPond, 'banner')"
                   @error="sweetAlertError('banner')">
                 <div class="row">
                     <label for="name">Profile Banner</label>
@@ -36,13 +36,13 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', authUserId)" method="put"
                   #default = '{
                     processing,
                     isDirty,
                     errors
                   }'
-                  @success="$refs.avatarPond.removeFiles() && sweetAlertSuccess('profile picture')"
+                  @success="clearPond(avatarPond, 'profile picture')"
                   @error="sweetAlertError('profile picture')">
                 <div class="row">
                     <label for="name">Profile Picture</label>
@@ -63,7 +63,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', authUserId)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -91,7 +91,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', authUserId)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -104,7 +104,7 @@
                     <div class="col">
                         <div class="form-floating">
                             <input id="username" class="form-control col-4 d-flex justify-content-center" type="text"
-                                   name="username" :placeholder="user.data.name" maxlength="255" autocomplete="off">
+                                   name="username" :placeholder="user.data.name ?? ''" maxlength="255" autocomplete="off">
                             <label for="username">Username</label>
                             <div v-if="errors.username" class="alert-danger">
                                 <ul>
@@ -118,7 +118,7 @@
                     </div>
                 </div>
             </Form>
-            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', authUserId)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -145,7 +145,7 @@
                 </div>
             </div>
             </Form>
-            <Form :action="route('user.update', $page.props.auth.user.id)" method="put"
+            <Form :action="route('user.update', authUserId)" method="put"
                   #default = '{
                     processing,
                     isDirty,
@@ -197,8 +197,11 @@
 
 <script setup lang="ts">
 
+// Vue
+import { computed, ref } from "vue";
+
 // Inertia
-import { router, Form } from "@inertiajs/vue3"
+import { router, Form, usePage } from "@inertiajs/vue3"
 
 // Layout
 import appLayout from "../../layout/AppLayout.vue";
@@ -226,6 +229,17 @@ defineOptions({
 const props = defineProps<{
     user: Resource<User>
 }>();
+
+const authUserId = computed(() => usePage().props.auth.user.id ?? undefined);
+
+const bannerPond = ref<{ removeFiles: () => void } | null>(null);
+const avatarPond = ref<{ removeFiles: () => void } | null>(null);
+
+function clearPond(pond: { removeFiles: () => void } | null, message: string): void
+{
+    pond?.removeFiles();
+    sweetAlertSuccess(message);
+}
 
 const FilePond = vueFilePond(
     FilePondPluginFileValidateType,

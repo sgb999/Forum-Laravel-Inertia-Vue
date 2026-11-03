@@ -38,7 +38,7 @@
 <script setup lang="ts">
 
 // Vue
-import { defineOptions, ref } from "vue";
+import { ref } from "vue";
 
 // Inertia
 import { Form } from "@inertiajs/vue3"

@@ -9,10 +9,10 @@
                 <inertia-link :href="route('post.index', topic.id)"><h3>{{topic.title}}</h3></inertia-link>
             </div>
             <div class="card-body">
-                <inertia-link :href="route('user.profile', topic.user.username)">
-                    <p>{{topic.user.username}}</p>
+                <inertia-link v-if="topic.user" :href="route('user.profile', topic.user.username)">
+                    <p>{{ topic.user.username }}</p>
                 </inertia-link>
-                <inertia-link :href="route('post.show', { category_id : topic.category.id })">
+                <inertia-link v-if="topic.category" :href="route('post.show', { category_id : topic.category.id })">
                     <p>{{ topic.category.name }}</p>
                 </inertia-link>
                 <p>{{ formatDate(topic.createdAt) }}</p>

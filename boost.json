@@ -1,0 +1,26 @@
+{
+    "agents": [
+        "cursor",
+        "junie",
+        "opencode"
+    ],
+    "cloud": true,
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch": true,
+    "packages": [
+        "spatie/laravel-medialibrary",
+        "fruitcake/laravel-debugbar"
+    ],
+    "sail": false,
+    "skills": [
+        "infer-conventions",
+        "deploying-to-cloud",
+        "laravel-best-practices",
+        "testing-best-practices",
+        "configure-nightwatch",
+        "inertia-vue-development",
+        "medialibrary-development",
+        "debug-using-debugbar"
+    ]
+}

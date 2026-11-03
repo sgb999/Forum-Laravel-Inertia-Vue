@@ -13,9 +13,6 @@
 
 <script setup lang="ts">
 
-// Vue
-import { defineOptions, defineProps} from "vue";
-
 // Layout
 import appLayout from "../../layout/AppLayout.vue";
 

@@ -24,6 +24,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^3.6",
+        "brianium/paratest": "^7.27",
         "fruitcake/laravel-debugbar": "^4.4",
         "laravel/boost": "^2.10",
         "mockery/mockery": "^1.6.12",

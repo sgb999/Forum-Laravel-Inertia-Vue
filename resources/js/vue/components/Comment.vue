@@ -24,7 +24,7 @@
             v-for="(comment, index) in comments.data">
             <hr>
             <p id="user-comment">{{ comment.comment }}</p>
-            <div v-if="page.props.auth.user.id === comment.user.id" class="commentForm">
+            <div v-if="page.props.auth.user.id === comment.user?.id" class="commentForm">
                <form @submit.prevent class="edit-form form-floating">
                     <textarea id="edit-comment" class="form-control" rows="4" minlength="4" placeholder="Edit Comment">{{ comment.comment }}</textarea>
                     <label id="editCommentLabel" for="edit-comment">Edit Comment</label>
@@ -36,7 +36,7 @@
                     </div>
                </form>
             </div>
-            <inertia-link :href="route('user.profile', comment.user.username)">
+            <inertia-link v-if="comment.user" :href="route('user.profile', comment.user.username)">
                 {{ comment.user.username }}
             </inertia-link>
             <p>{{ formatDate(comment.createdAt) }}</p>
@@ -48,9 +48,6 @@
 </template>
 
 <script setup lang="ts">
-
-// Vue
-import { defineOptions, defineProps } from 'vue'
 
 // Inertia
 import { useHttp, router, usePage } from '@inertiajs/vue3'

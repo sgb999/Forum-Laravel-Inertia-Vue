@@ -1,12 +1,12 @@
 <template>
     <Head title="Profile" />
-    <img class="banner" :src="user.data.bannerPicture.url" alt="banner">
+    <img v-if="user.data.bannerPicture" class="banner" :src="user.data.bannerPicture.url" alt="banner">
     <div id="view-user-page" class="container">
         <div class="user">
-            <img class="avatar" :src="user.data.profilePicture.url" alt="avatar">
+            <img v-if="user.data.profilePicture" class="avatar" :src="user.data.profilePicture.url" alt="avatar">
             <h1>{{ user.data.username }}</h1>
             <div class="right">
-                <inertia-link v-if="user.data.id === $page.props.auth.user.id" :href="route('user.update-profile', $page.props.auth.user.username)" class="btn button-dark">Edit Profile</inertia-link>
+                <inertia-link v-if="user.data.id === $page.props.auth.user.id && $page.props.auth.user.username" :href="route('user.update-profile', $page.props.auth.user.username)" class="btn button-dark">Edit Profile</inertia-link>
                 <inertia-link v-if="user.data.id !== $page.props.auth.user.id && $page.props.auth.login" :href="route('chat.index', user.data.id)" class="btn btn-primary">Message</inertia-link>
             </div>
         </div>
@@ -17,19 +17,18 @@
             <template #fallback>
                 <page-loader />
             </template>
-            <posts :topics="posts.data"></posts>
-            <div v-if="posts.data < 1" class="empty-posts">
-                <h4>There are no posts yet</h4>
-            </div>
-            <pagination v-if="posts.meta.links" class="container" :links="posts.meta.links"></pagination>
+            <template v-if="posts">
+                <posts :topics="posts.data"></posts>
+                <div v-if="posts.data.length < 1" class="empty-posts">
+                    <h4>There are no posts yet</h4>
+                </div>
+                <pagination v-if="posts.meta.links" class="container" :links="posts.meta.links"></pagination>
+            </template>
         </Deferred>
     </div>
 </template>
 
 <script setup lang="ts">
-
-// Vue
-import { defineOptions, defineProps} from "vue";
 
 // Inertia
 import { Deferred } from "@inertiajs/vue3";

@@ -32,6 +32,7 @@ class Kernel extends HttpKernel
     protected $middleware = [
 
         // \App\Http\Middleware\TrustHosts::class,
+        Middleware\ResetZiggy::class,
         Middleware\TrustProxies::class,
         HandleCors::class,
         Middleware\PreventRequestsDuringMaintenance::class,

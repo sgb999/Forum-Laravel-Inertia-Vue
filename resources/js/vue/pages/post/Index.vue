@@ -5,12 +5,12 @@
         <p>{{post.data.content}}</p>
         <div class="user">
             <img class="avatar" :src="post.data.user?.profilePicture?.thumb" alt="avatar">
-            <inertia-link :href="route('user.profile', { username : post.data.user.username })">
-                {{post.data.user.username}}
+            <inertia-link v-if="post.data.user" :href="route('user.profile', { username : post.data.user.username })">
+                {{ post.data.user.username }}
             </inertia-link>
             <p>{{ formatDate(post.data.createdAt) }}</p>
         </div>
-        <div v-if="post.data.user.id === page.props.auth.user.id" class="mt-3">
+        <div v-if="post.data.user && post.data.user.id === page.props.auth.user.id" class="mt-3">
             <inertia-link :href="route('post.edit', post.data.id)" id="edit" class="btn btn-primary col-1 btn-style">Edit</inertia-link>
             <button class="btn btn-danger" @click="deletePost">Delete</button>
         </div>
@@ -22,15 +22,12 @@
             <template #fallback>
                 <page-loader />
             </template>
-            <comment :postId="post.data.id" :comments="comments"/>
+            <comment v-if="comments" :postId="post.data.id" :comments="comments"/>
         </Deferred>
     </div>
 </template>
 
 <script setup lang="ts">
-
-// Vue
-import { defineOptions, defineProps} from "vue";
 
 // Inertia
 import { router, Deferred, usePage } from "@inertiajs/vue3";
@@ -51,7 +48,6 @@ import { Comment as CommentInterface } from "../../types/Comment";
 // Composables
 import Swal from 'sweetalert2';
 import type { SweetAlertResult } from 'sweetalert2';
-
 
 defineOptions({
     name: "Index",

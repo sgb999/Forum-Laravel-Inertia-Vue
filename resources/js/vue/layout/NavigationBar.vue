@@ -18,7 +18,7 @@
 
 <script setup lang="ts">
 // Vue
-import { defineOptions, computed } from "vue";
+import { computed } from "vue";
 
 // Inertia
 import { usePage, router } from "@inertiajs/vue3";
@@ -30,7 +30,7 @@ defineOptions({
 const page = usePage();
 
 const isLoggedIn = computed(() => page.props.auth.login);
-const username = computed(() => page.props.auth.user?.username);
+const username = computed(() => page.props.auth.user.username ?? undefined);
 
 function logout(): void
 {

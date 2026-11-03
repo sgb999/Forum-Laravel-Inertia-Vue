@@ -29,7 +29,7 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 ##############################################
 FROM node:22-alpine AS frontend
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 COPY package.json pnpm-lock.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
@@ -40,7 +40,7 @@ RUN pnpm run build
 # Stage 2b: Frontend dev image (used by the `vite` service in compose)
 ##############################################
 FROM node:22-alpine AS frontend-dev
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 WORKDIR /var/www/html
 
 ##############################################
@@ -143,7 +143,7 @@ RUN apt-get update \
     && chmod +x /usr/local/bin/install-php-extensions \
     && install-php-extensions pdo_sqlite mbstring sockets pcntl gd
 
-RUN npm install -g playwright@1.59.1 \
+RUN npm install -g playwright@1.64.1 \
     && PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright install --with-deps chromium \
     && rm -rf /var/lib/apt/lists/*
 

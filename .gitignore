@@ -1,11 +1,15 @@
 node_modules
 public/hot
 public/storage
+public/build
 storage/*.key
 vendor
 .env
-.env.backup
+.env.*
+!.env.example
+auth.json
 .phpunit.result.cache
+.phpunit.cache
 docker-compose.override.yml
 Homestead.json
 Homestead.yaml
@@ -13,7 +17,10 @@ npm-debug.log
 yarn-error.log
 .idea
 .vscode
-public/build
+.fleet
+.zed
 .pnpm-store
+graphify-out
+opencode.json
 
 tests/Browser/Screenshots
