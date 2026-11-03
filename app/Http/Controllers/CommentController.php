@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\{CommentStoreRequest, CommentEditRequest};
+use App\Http\Requests\Comments\{CommentEditRequest, CommentStoreRequest};
 use App\Models\{Comment, Post};
 use Illuminate\Http\{JsonResponse, RedirectResponse};
 
