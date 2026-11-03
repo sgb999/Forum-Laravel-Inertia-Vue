@@ -289,7 +289,8 @@ function sweetAlertError(message: string): void
   position: relative
   border-radius: 10px
   height: 600px
-  width: clamp(400px, 100%, 1296px)
+  width: 100%
+  max-width: 1296px
   display: block
   margin: 0 auto
   box-sizing: border-box
@@ -305,7 +306,7 @@ function sweetAlertError(message: string): void
     height: 150px
     width: 150px
     border-radius: 50%
-    border: solid 2px #FFFFFF
+    border: solid 2px var(--color-text)
     margin-right: 20px
     color: rgb(228, 230, 235)
 #name-tag
@@ -329,16 +330,32 @@ form
     width: 60%
     border-radius: 10px
     label
-        color: #6B6760
+        color: var(--color-text-subtle)
     input
-        background: #1b1a1f
-        color: #fff
-        caret-color: #ffffff
-        border-color: #6B6760
+        background: var(--color-input)
+        color: var(--color-text)
+        caret-color: var(--color-text)
+        border-color: var(--color-text-subtle)
         &:focus
-            background: #1b1a1f
-            color: #fff
-            border-color: #6B6760
+            background: var(--color-input)
+            color: var(--color-text)
+            border-color: var(--color-text-subtle)
             box-shadow: none
             outline: 0
+
+@media screen and (max-width: 600px)
+    .banner
+        height: 400px
+    .user
+        bottom: 0
+        display: flex
+        flex-direction: column
+        gap: 8px
+    #name-tag, #username-tag, #email-tag
+        margin: 0
+        overflow-wrap: anywhere
+    .avatar
+        margin-right: 0
+    form
+        width: 100%
 </style>
