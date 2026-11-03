@@ -30,9 +30,6 @@
 
 <script setup lang="ts">
 
-// Vue
-import { defineOptions, defineProps} from "vue";
-
 // Inertia
 import { Deferred } from "@inertiajs/vue3";
 

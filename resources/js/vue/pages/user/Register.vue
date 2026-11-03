@@ -77,9 +77,6 @@
 
 <script setup lang="ts">
 
-// Vue
-import { defineOptions } from "vue";
-
 // Inertia
 import { Form } from "@inertiajs/vue3"
 

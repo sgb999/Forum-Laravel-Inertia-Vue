@@ -29,9 +29,6 @@
 
 <script setup lang="ts">
 
-// Vue
-import { defineOptions, defineProps} from "vue";
-
 // Inertia
 import { router, Deferred, usePage } from "@inertiajs/vue3";
 
@@ -51,7 +48,6 @@ import { Comment as CommentInterface } from "../../types/Comment";
 // Composables
 import Swal from 'sweetalert2';
 import type { SweetAlertResult } from 'sweetalert2';
-
 
 defineOptions({
     name: "Index",
