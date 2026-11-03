@@ -143,7 +143,7 @@ RUN apt-get update \
     && chmod +x /usr/local/bin/install-php-extensions \
     && install-php-extensions pdo_sqlite mbstring sockets pcntl gd
 
-RUN npm install -g playwright@1.59.1 \
+RUN npm install -g playwright@1.64.1 \
     && PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright install --with-deps chromium \
     && rm -rf /var/lib/apt/lists/*
 

@@ -1,7 +1,6 @@
 <?php
 
 use Tests\TestCase;
-use Tightenco\Ziggy\BladeRouteGenerator;
 
 /*
 |--------------------------------------------------------------------------
@@ -38,14 +37,11 @@ uses()->beforeEach(function () {
 | Browser Tests
 |--------------------------------------------------------------------------
 |
-| Ziggy emits its global script only once per process, which breaks every
-| visit after the first in Pest's long-running browser server.
+| Ziggy v1 keeps a process-wide "already emitted" flag. Pest's browser
+| cleaner resets Tighten\Ziggy (v2), so it never clears Tightenco\Ziggy.
+| ResetZiggy runs on each request and is what keeps later visits working.
 |
 */
-
-uses()->beforeEach(function () {
-    BladeRouteGenerator::$generated = false;
-})->in('Browser');
 
 /*
 |--------------------------------------------------------------------------

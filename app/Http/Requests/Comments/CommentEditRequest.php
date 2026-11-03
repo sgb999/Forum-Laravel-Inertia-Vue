@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Comments;
 
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Validator;
@@ -23,7 +23,7 @@ class CommentEditRequest extends FormRequest
     public function rules() : array
     {
         return [
-            'comment' => ['required', 'string'],
+            'comment' => ['required', 'string', 'min:4'],
         ];
     }
 
@@ -32,7 +32,7 @@ class CommentEditRequest extends FormRequest
         return [
             function (Validator $validator) {
                 if ($this->input('comment') === $this->route('comment')->comment) {
-                    abort(422);
+                    abort(304);
                 }
             }
         ];
