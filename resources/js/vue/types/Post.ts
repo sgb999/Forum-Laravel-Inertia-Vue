@@ -9,6 +9,6 @@ export interface Post {
     user?: User;
     category_id?: number;
     category?: Category;
-    created_at: string;
-    updated_at: string;
+    createdAt: string;
+    updatedAt: string;
 }
