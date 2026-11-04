@@ -99,7 +99,7 @@ ENV APP_ENV=local
 
 COPY docker/php/my.cnf.dev /etc/my.cnf.d/client.cnf
 
-RUN install-php-extensions xdebug
+RUN install-php-extensions xdebug pcov
 COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/99-xdebug.ini
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 

@@ -59,7 +59,7 @@ fi
 
 echo "Running the test suite before push..."
 
-if ! "$DOCKER_BIN" compose run --rm browser php artisan test tests/Unit tests/Feature tests/Browser --compact; then
+if ! "$DOCKER_BIN" compose run --rm browser php ./vendor/bin/pest tests/Unit tests/Feature tests/Browser --compact --parallel --tia; then
     echo "Tests failed. Push aborted (use git push --no-verify to bypass)." >&2
     exit 1
 fi
