@@ -42,7 +42,7 @@ jobs:
           php artisan key:generate
 
       - name: Run tests
-        run: php ./vendor/bin/pest --compact --parallel --testsuite=Unit,Feature
+        run: php ./vendor/bin/pest --compact --testsuite=Unit,Feature
 
   browser:
     runs-on: ubuntu-latest
