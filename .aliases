@@ -1,3 +1,4 @@
+alias "test"='docker compose exec app php ./vendor/bin/pest --parallel --tia && docker compose --profile testing run --rm browser php artisan test tests/Browser --compact'
 alias composer='docker compose exec app composer'
 alias php='docker compose exec app php'
 alias pnpm='docker compose exec vite pnpm'
