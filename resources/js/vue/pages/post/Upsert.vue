@@ -98,17 +98,17 @@ function disableButton(): boolean
     .container
         width: 50%
 .card
-    background: #242220
-    color: #fff
+    background: var(--color-surface-alt)
+    color: var(--color-text)
     label
-        color: #6B6760
+        color: var(--color-text-subtle)
     textarea
         height: 100px
     input, select, textarea
-        background: #1b1a1f
-        color: #fff
-        caret-color: #ffffff
-        border-color: #6B6760
+        background: var(--color-input)
+        color: var(--color-text)
+        caret-color: var(--color-text)
+        border-color: var(--color-text-subtle)
         &:focus
             box-shadow: none
             outline: 0

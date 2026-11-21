@@ -51,6 +51,22 @@ test('login requires an email and a password', function () {
     $this->assertGuest();
 });
 
+test('signing out clears the session so the next page is a guest', function () {
+    $user = User::factory()->create();
+
+    $this->post(route('login.post'), loginPayload(['email' => $user->email]))
+        ->assertRedirectToRoute('post.show');
+
+    $this->post(route('logout'))
+        ->assertRedirectToRoute('post.show');
+
+    $this->assertGuest();
+
+    $this->get(route('post.show'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page->where('auth.login', false));
+});
+
 test('authenticated users are redirected away from the login page', function () {
     $this->actingAs(User::factory()->create())
         ->get(route('login.index'))

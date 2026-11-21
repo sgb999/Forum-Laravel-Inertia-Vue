@@ -7,7 +7,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\{ PostFilterRequest, UserEditRequest, UserLoginRequest, UserStoreRequest};
 use App\Models\User;
 use Illuminate\Http\{ RedirectResponse, Request };
-use Illuminate\Support\Facades\{ Auth, DB, Hash};
+use Illuminate\Support\Facades\{Auth, DB, Hash};
 use Inertia\{ Inertia, Response, ResponseFactory};
 use Throwable;
 
@@ -142,6 +142,8 @@ class UserController extends Controller
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+        Auth::forgetGuards();
+        Auth::shouldUse('web');
 
         return redirect(route('post.show'));
     }

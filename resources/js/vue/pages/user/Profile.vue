@@ -70,7 +70,7 @@ defineProps<{
 .content
     .empty-posts
         width: 80%
-        background-color: #A9A9A9
+        background-color: var(--color-disabled)
         border-radius: 25px
         display: block
         margin: 0 auto
@@ -94,14 +94,18 @@ defineProps<{
     height: 150px
     width: 150px
     border-radius: 50%
-    border: solid 2px #FFFFFF
+    border: solid 2px var(--color-text)
     margin-right: 20px
 @media screen and (max-width: 600px)
     .banner
+        width: 100%
         height: 400px
         top: 240px
     .user
         padding-top: 350px
+        flex-wrap: wrap
+        .right
+            margin-left: 0
     .content
         padding-top: 500px
 </style>

@@ -1,8 +1,6 @@
 <template>
-    <div class="row">
-        <div class="footer col-xs-12">
-            <p>© 2026 Copyright:</p>
-        </div>
+    <div class="footer">
+        <p>© 2026 Copyright:</p>
     </div>
 </template>
 
@@ -15,9 +13,9 @@ defineOptions({
 <style scoped lang="sass">
 .footer
     font-family: Arial, serif
-    color: #F1F3F1
+    color: var(--color-text-strong)
     clear: both
     margin-top: 20px
     text-align: center
-    background-color: #151210
+    background-color: var(--color-surface)
 </style>

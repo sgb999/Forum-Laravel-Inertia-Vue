@@ -1,9 +1,25 @@
+:root
+    --color-background: #1A1714
+    --color-surface: #151210
+    --color-surface-alt: #242220
+    --color-raised: #2E2B28
+    --color-input: #1B1A1F
+    --color-border: #2A2724
+    --color-text: #FFFFFF
+    --color-text-strong: #F1F3F1
+    --color-text-muted: #9E9A94
+    --color-text-subtle: #6B6760
+    --color-disabled: #A9A9A9
+    --color-success: #008000
+    --color-warning: #FFFF00
+    --color-danger: #FF0000
+
 .button-dark
     background: #222220
-    color: #fff
+    color: var(--color-text)
     font-weight: bold
-    outline-color: #FFFFFF
-    border-color: #6B6760
+    outline-color: var(--color-text)
+    border-color: var(--color-text-subtle)
     cursor: pointer
     &:disabled
         cursor: not-allowed !important

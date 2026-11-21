@@ -238,15 +238,15 @@ function toggleForm(toggle: FormToggle, event: MouseEvent): void
     .form-control
         margin-bottom: 10px
     label
-        color: #6B6760
+        color: var(--color-text-subtle)
     #editCommentLabel
         display: none
     textarea
         height: 100px
-        background: #1b1a1f
-        color: #fff
-        caret-color: #ffffff
-        border-color: #6B6760
+        background: var(--color-input)
+        color: var(--color-text)
+        caret-color: var(--color-text)
+        border-color: var(--color-text-subtle)
         &:focus
             box-shadow: none
             outline: 0
@@ -257,7 +257,7 @@ function toggleForm(toggle: FormToggle, event: MouseEvent): void
         background: transparent
         font-size: 20px
 a
-    color: #FFFFFF
+    color: var(--color-text)
     text-decoration: none
 #update
     display: none
@@ -266,7 +266,7 @@ a
 .empty-comments
     height: 200px
     width: 80%
-    background-color: #A9A9A9
+    background-color: var(--color-disabled)
     border-radius: 25px
     display: block
     margin: 0 auto

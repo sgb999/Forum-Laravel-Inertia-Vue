@@ -1,0 +1,83 @@
+name: PR policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  pr-policy:
+    name: pr-policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR policy
+        env:
+          # Passed via env (never interpolated into the script) so PR text cannot inject shell.
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
+        run: |
+          set -u
+          fail=0
+          err() { echo "::error title=PR policy::$1"; fail=1; }
+
+          # Branch names are user-controlled: keep only safe characters before echoing them in annotations.
+          safe_head=$(printf '%s' "$HEAD_REF" | tr -cd 'A-Za-z0-9._/-')
+          safe_base=$(printf '%s' "$BASE_REF" | tr -cd 'A-Za-z0-9._/-')
+
+          # Release and sync PRs from this repo's own staging or master (e.g. staging -> master release,
+          # master -> staging back-merge, staging -> feature/N update) are exempt.
+          if { [ "$HEAD_REF" = "staging" ] || [ "$HEAD_REF" = "master" ]; } && [ "$HEAD_REPO" = "$BASE_REPO" ]; then
+            echo "Release/sync PR from $safe_head: exempt from PR policy."
+            exit 0
+          fi
+
+          # 1. Linked issue: "Closes #N" or "Refs #N" in the PR body.
+          linked=$(printf '%s' "$PR_BODY" | grep -oiE '\b(closes|refs)[[:space:]]+#[0-9]+\b' | grep -oE '[0-9]+$' | sort -u || true)
+          if [ -z "$linked" ]; then
+            err "Missing linked issue. Add 'Closes #<issue>' or 'Refs #<issue>' to the PR description (other keywords such as 'Fixes', or 'Closes:' with a colon, are not accepted)."
+          fi
+
+          # 2. Branch name: feature/{issue_id} or hotfix/{issue_id}, id == linked issue.
+          if [[ "$HEAD_REF" =~ ^(feature|hotfix)/([0-9]+)$ ]]; then
+            kind="${BASH_REMATCH[1]}"
+            id="${BASH_REMATCH[2]}"
+
+            # Title must be exactly the branch name, e.g. "feature/123".
+            if [ "$PR_TITLE" != "$HEAD_REF" ]; then
+              err "PR title must be exactly the branch name: '$safe_head'."
+            fi
+            if [ -n "$linked" ] && ! printf '%s\n' "$linked" | grep -qx "$id"; then
+              err "Branch '$safe_head' expects issue #$id, but the PR links: $(printf '%s' "$linked" | sed 's/^/#/' | paste -sd' ' -). The branch number must equal the linked issue number."
+            fi
+
+            # 3 & 4. Target branch rules.
+            if [ "$kind" = "feature" ]; then
+              if [ "$BASE_REF" != "staging" ]; then
+                err "feature/* PRs must target 'staging' (this PR targets '$safe_base')."
+              fi
+            else
+              if [ "$BASE_REF" = "master" ]; then
+                if ! printf ',%s,' "$PR_LABELS" | grep -q ',production-incident,'; then
+                  err "hotfix/* PRs may target 'master' only with the 'production-incident' label. Add the label, or retarget to 'staging'."
+                fi
+              elif [ "$BASE_REF" != "staging" ]; then
+                err "hotfix/* PRs must target 'staging' (or 'master' with the 'production-incident' label). This PR targets '$safe_base'."
+              fi
+            fi
+          else
+            err "Branch name '$safe_head' is invalid. Use 'feature/<issue_id>' or 'hotfix/<issue_id>' (e.g. feature/123)."
+          fi
+
+          if [ "$fail" -ne 0 ]; then
+            echo "See docs/PR-POLICY.md for the rules."
+            exit 1
+          fi
+          echo "PR policy OK."
