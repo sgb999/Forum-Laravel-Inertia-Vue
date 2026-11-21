@@ -32,9 +32,10 @@ jobs:
           safe_head=$(printf '%s' "$HEAD_REF" | tr -cd 'A-Za-z0-9._/-')
           safe_base=$(printf '%s' "$BASE_REF" | tr -cd 'A-Za-z0-9._/-')
 
-          # Release PR (staging -> master, same repo only) is exempt.
-          if [ "$HEAD_REF" = "staging" ] && [ "$BASE_REF" = "master" ] && [ "$HEAD_REPO" = "$BASE_REPO" ]; then
-            echo "Release PR (staging -> master): exempt from PR policy."
+          # Release and sync PRs from this repo's own staging or master (e.g. staging -> master release,
+          # master -> staging back-merge, staging -> feature/N update) are exempt.
+          if { [ "$HEAD_REF" = "staging" ] || [ "$HEAD_REF" = "master" ]; } && [ "$HEAD_REPO" = "$BASE_REPO" ]; then
+            echo "Release/sync PR from $safe_head: exempt from PR policy."
             exit 0
           fi
 
@@ -49,11 +50,10 @@ jobs:
             kind="${BASH_REMATCH[1]}"
             id="${BASH_REMATCH[2]}"
 
-            # Title must start with the branch name, e.g. "feature/123" or "feature/123: Short summary".
-            case "$PR_TITLE" in
-              "$HEAD_REF"|"$HEAD_REF: "?*|"$HEAD_REF "?*) ;;
-              *) err "PR title must start with the branch name, e.g. '$safe_head: Short summary'." ;;
-            esac
+            # Title must be exactly the branch name, e.g. "feature/123".
+            if [ "$PR_TITLE" != "$HEAD_REF" ]; then
+              err "PR title must be exactly the branch name: '$safe_head'."
+            fi
             if [ -n "$linked" ] && ! printf '%s\n' "$linked" | grep -qx "$id"; then
               err "Branch '$safe_head' expects issue #$id, but the PR links: $(printf '%s' "$linked" | sed 's/^/#/' | paste -sd' ' -). The branch number must equal the linked issue number."
             fi
