@@ -20,21 +20,27 @@ jobs:
           BASE_REF: ${{ github.event.pull_request.base.ref }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+          BASE_REPO: ${{ github.repository }}
         run: |
           set -u
           fail=0
           err() { echo "::error title=PR policy::$1"; fail=1; }
 
-          # Release PR (staging -> master) is exempt.
-          if [ "$HEAD_REF" = "staging" ] && [ "$BASE_REF" = "master" ]; then
+          # Branch names are user-controlled: keep only safe characters before echoing them in annotations.
+          safe_head=$(printf '%s' "$HEAD_REF" | tr -cd 'A-Za-z0-9._/-')
+          safe_base=$(printf '%s' "$BASE_REF" | tr -cd 'A-Za-z0-9._/-')
+
+          # Release PR (staging -> master, same repo only) is exempt.
+          if [ "$HEAD_REF" = "staging" ] && [ "$BASE_REF" = "master" ] && [ "$HEAD_REPO" = "$BASE_REPO" ]; then
             echo "Release PR (staging -> master): exempt from PR policy."
             exit 0
           fi
 
           # 1. Linked issue: "Closes #N" or "Refs #N" in the PR body.
-          linked=$(printf '%s' "$PR_BODY" | grep -oiE '\b(closes|refs)[[:space:]]+#[0-9]+' | grep -oE '[0-9]+$' | sort -u || true)
+          linked=$(printf '%s' "$PR_BODY" | grep -oiE '\b(closes|refs)[[:space:]]+#[0-9]+\b' | grep -oE '[0-9]+$' | sort -u || true)
           if [ -z "$linked" ]; then
-            err "Missing linked issue. Add 'Closes #<issue>' or 'Refs #<issue>' to the PR description."
+            err "Missing linked issue. Add 'Closes #<issue>' or 'Refs #<issue>' to the PR description (other keywords such as 'Fixes', or 'Closes:' with a colon, are not accepted)."
           fi
 
           # 2. Branch name: feature/{issue_id} or hotfix/{issue_id}, id == linked issue.
@@ -42,13 +48,13 @@ jobs:
             kind="${BASH_REMATCH[1]}"
             id="${BASH_REMATCH[2]}"
             if [ -n "$linked" ] && ! printf '%s\n' "$linked" | grep -qx "$id"; then
-              err "Branch '$HEAD_REF' expects issue #$id, but the PR links: $(printf '%s' "$linked" | sed 's/^/#/' | paste -sd' ' -). The branch number must equal the linked issue number."
+              err "Branch '$safe_head' expects issue #$id, but the PR links: $(printf '%s' "$linked" | sed 's/^/#/' | paste -sd' ' -). The branch number must equal the linked issue number."
             fi
 
             # 3 & 4. Target branch rules.
             if [ "$kind" = "feature" ]; then
               if [ "$BASE_REF" != "staging" ]; then
-                err "feature/* PRs must target 'staging' (this PR targets '$BASE_REF')."
+                err "feature/* PRs must target 'staging' (this PR targets '$safe_base')."
               fi
             else
               if [ "$BASE_REF" = "master" ]; then
@@ -56,11 +62,11 @@ jobs:
                   err "hotfix/* PRs may target 'master' only with the 'production-incident' label. Add the label, or retarget to 'staging'."
                 fi
               elif [ "$BASE_REF" != "staging" ]; then
-                err "hotfix/* PRs must target 'staging' (or 'master' with the 'production-incident' label). This PR targets '$BASE_REF'."
+                err "hotfix/* PRs must target 'staging' (or 'master' with the 'production-incident' label). This PR targets '$safe_base'."
               fi
             fi
           else
-            err "Branch name '$HEAD_REF' is invalid. Use 'feature/<issue_id>' or 'hotfix/<issue_id>' (e.g. feature/123)."
+            err "Branch name '$safe_head' is invalid. Use 'feature/<issue_id>' or 'hotfix/<issue_id>' (e.g. feature/123)."
           fi
 
           if [ "$fail" -ne 0 ]; then
