@@ -1,0 +1,70 @@
+name: PR policy
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  pull-requests: read
+  contents: read
+
+jobs:
+  pr-policy:
+    name: pr-policy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check PR policy
+        env:
+          # Passed via env (never interpolated into the script) so PR text cannot inject shell.
+          HEAD_REF: ${{ github.event.pull_request.head.ref }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+          PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+        run: |
+          set -u
+          fail=0
+          err() { echo "::error title=PR policy::$1"; fail=1; }
+
+          # Release PR (staging -> master) is exempt.
+          if [ "$HEAD_REF" = "staging" ] && [ "$BASE_REF" = "master" ]; then
+            echo "Release PR (staging -> master): exempt from PR policy."
+            exit 0
+          fi
+
+          # 1. Linked issue: "Closes #N" or "Refs #N" in the PR body.
+          linked=$(printf '%s' "$PR_BODY" | grep -oiE '\b(closes|refs)[[:space:]]+#[0-9]+' | grep -oE '[0-9]+$' | sort -u || true)
+          if [ -z "$linked" ]; then
+            err "Missing linked issue. Add 'Closes #<issue>' or 'Refs #<issue>' to the PR description."
+          fi
+
+          # 2. Branch name: feature/{issue_id} or hotfix/{issue_id}, id == linked issue.
+          if [[ "$HEAD_REF" =~ ^(feature|hotfix)/([0-9]+)$ ]]; then
+            kind="${BASH_REMATCH[1]}"
+            id="${BASH_REMATCH[2]}"
+            if [ -n "$linked" ] && ! printf '%s\n' "$linked" | grep -qx "$id"; then
+              err "Branch '$HEAD_REF' expects issue #$id, but the PR links: $(printf '%s' "$linked" | sed 's/^/#/' | paste -sd' ' -). The branch number must equal the linked issue number."
+            fi
+
+            # 3 & 4. Target branch rules.
+            if [ "$kind" = "feature" ]; then
+              if [ "$BASE_REF" != "staging" ]; then
+                err "feature/* PRs must target 'staging' (this PR targets '$BASE_REF')."
+              fi
+            else
+              if [ "$BASE_REF" = "master" ]; then
+                if ! printf ',%s,' "$PR_LABELS" | grep -q ',production-incident,'; then
+                  err "hotfix/* PRs may target 'master' only with the 'production-incident' label. Add the label, or retarget to 'staging'."
+                fi
+              elif [ "$BASE_REF" != "staging" ]; then
+                err "hotfix/* PRs must target 'staging' (or 'master' with the 'production-incident' label). This PR targets '$BASE_REF'."
+              fi
+            fi
+          else
+            err "Branch name '$HEAD_REF' is invalid. Use 'feature/<issue_id>' or 'hotfix/<issue_id>' (e.g. feature/123)."
+          fi
+
+          if [ "$fail" -ne 0 ]; then
+            echo "See docs/PR-POLICY.md for the rules."
+            exit 1
+          fi
+          echo "PR policy OK."
