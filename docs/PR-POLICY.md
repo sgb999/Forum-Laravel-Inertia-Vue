@@ -8,9 +8,10 @@ Enforced by the `pr-policy` check (`.github/workflows/pr-policy.yml`).
 2. **Branch names** are `feature/{issue_id}` (new features) or `hotfix/{issue_id}` (hotfixes). `{issue_id}` must equal the linked issue number, e.g. `feature/123` with `Closes #123`.
 3. **`feature/*` PRs target `staging`.**
 4. **`hotfix/*` PRs target `staging`**, unless it is a genuine production incident: then they may target `master` and must carry the `production-incident` label.
-5. **Back-merge:** a hotfix merged into `master` must be merged back into `staging` straight away so the branches do not diverge. This is a manual step (open a `staging` <- `master` PR); automation is optional.
+5. **PR titles** start with the branch name, e.g. `feature/123` or `feature/123: Add login page`.
+6. **Back-merge:** a hotfix merged into `master` must be merged back into `staging` straight away so the branches do not diverge. This is a manual step (open a `staging` <- `master` PR); automation is optional.
 
-The release PR from `staging` into `master` is exempt from rules 1-4.
+The release PR from `staging` into `master` is exempt from rules 1-5.
 
 ## Issues and auto-close
 
