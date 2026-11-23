@@ -67,6 +67,7 @@ COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /u
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions \
         pdo_mysql \
+        pdo_pgsql \
         mysqli \
         mbstring \
         exif \
