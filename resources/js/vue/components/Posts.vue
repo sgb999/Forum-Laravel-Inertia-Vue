@@ -10,12 +10,12 @@
             </div>
             <div class="card-body">
                 <inertia-link v-if="topic.user" :href="route('user.profile', topic.user.username)">
-                    <p><span class="text-muted">Author:</span> {{ topic.user.username }}</p>
+                    <p><span class="meta-label">Author:</span> {{ topic.user.username }}</p>
                 </inertia-link>
                 <inertia-link v-if="topic.category" :href="route('post.show', { category_id : topic.category.id })">
-                    <p><span class="text-muted">Category:</span> {{ topic.category.name }}</p>
+                    <p><span class="meta-label">Category:</span> {{ topic.category.name }}</p>
                 </inertia-link>
-                <p><span class="text-muted">Posted:</span> <time :datetime="topic.createdAt">{{ formatDate(topic.createdAt) }}</time></p>
+                <p><span class="meta-label">Posted:</span> <time :datetime="topic.createdAt">{{ formatDate(topic.createdAt) }}</time></p>
             </div>
         </div>
     </div>
@@ -57,6 +57,17 @@ a, a:hover, a:focus, a:active
     grid-column-gap: 20px
     grid-row-gap: 15px
     height: fit-content
+    .card-body
+        padding: 12px 16px 16px
+        p
+            display: grid
+            grid-template-columns: 5.5rem 1fr
+            gap: 8px
+            margin: 0 0 8px
+            &:last-child
+                margin-bottom: 0
+    .meta-label
+        color: var(--color-text-muted)
     .card
         background: var(--color-surface-alt)
         color: var(--color-text)
