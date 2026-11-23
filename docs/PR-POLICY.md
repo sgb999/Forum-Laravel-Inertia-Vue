@@ -13,7 +13,7 @@ Enforced by the `pr-policy` check (`.github/workflows/pr-policy.yml`).
 
 Release and sync PRs from this repo's own `staging` or `master` are exempt from rules 1-5: the `staging` -> `master` release, the `master` -> `staging` back-merge, and `staging` -> `feature/N` updates.
 
-Automated Dependabot PRs authored by `dependabot[bot]` from this repository on a generated `dependabot/<ecosystem>/...` branch targeting `staging` are exempt from the linked-issue and exact-title rules (rules 1, 2, and 5), while still required to target `staging`. Ordinary contributors or bots using the `dependabot/` prefix must use `dependabot/{issue_id}` and follow rules 1-5.
+Automated Dependabot PRs authored by `dependabot[bot]` from this repository on a generated `dependabot/<ecosystem>/...` branch targeting `staging` are exempt from the branch-name and exact-title rules (rules 2 and 5). They must still link an issue (rule 1) and target `staging`: open an issue for the update and add `Closes #N` to the Dependabot PR's description, which re-runs the check. Ordinary contributors or bots using the `dependabot/` prefix must use `dependabot/{issue_id}` and follow rules 1-5.
 
 ## Issues and auto-close
 

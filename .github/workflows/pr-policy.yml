@@ -40,21 +40,27 @@ jobs:
             exit 0
           fi
 
+          # 1. Linked issue: "Closes #N" or "Refs #N" in the PR body.
+          linked=$(printf '%s' "$PR_BODY" | grep -oiE '\b(closes|refs)[[:space:]]+#[0-9]+\b' | grep -oE '[0-9]+$' | sort -u || true)
+
           # Dependabot automated PRs (dependabot[bot] from this repo on a generated multi-part branch
-          # dependabot/<ecosystem>/...) must target staging and are exempt from the issue-link and
-          # exact-title rules.
+          # dependabot/<ecosystem>/...) must target staging and link an issue, but are exempt from the
+          # branch-name and exact-title rules. Add 'Closes #N' to the PR description to pass.
           if [ "${PR_USER:-}" = "dependabot[bot]" ] && [ "$HEAD_REPO" = "$BASE_REPO" ] && [[ "$HEAD_REF" =~ ^dependabot/[^/]+/.+$ ]]; then
             if [ "$BASE_REF" != "staging" ]; then
               err "dependabot[bot] PRs must target 'staging' (this PR targets '$safe_base')."
+            fi
+            if [ -z "$linked" ]; then
+              err "Missing linked issue. Open an issue for this dependency update and add 'Closes #<issue>' or 'Refs #<issue>' to the PR description."
+            fi
+            if [ "$fail" -ne 0 ]; then
               echo "See docs/PR-POLICY.md for the rules."
               exit 1
             fi
-            echo "Dependabot automated PR ($safe_head -> $safe_base): PR policy OK."
+            echo "Dependabot automated PR ($safe_head -> $safe_base, linked #$(printf '%s' "$linked" | tr '\n' ' ' | sed 's/ $//')): PR policy OK."
             exit 0
           fi
 
-          # 1. Linked issue: "Closes #N" or "Refs #N" in the PR body.
-          linked=$(printf '%s' "$PR_BODY" | grep -oiE '\b(closes|refs)[[:space:]]+#[0-9]+\b' | grep -oE '[0-9]+$' | sort -u || true)
           if [ -z "$linked" ]; then
             err "Missing linked issue. Add 'Closes #<issue>' or 'Refs #<issue>' to the PR description (other keywords such as 'Fixes', or 'Closes:' with a colon, are not accepted)."
           fi
