@@ -33,7 +33,7 @@ createInertiaApp({
             .component('Head', Head);
 
         app.config.globalProperties.formatDate = (value: string) => {
-            return moment.utc(String(value)).local().format('DD/MM/YYYY H:mm a')
+            return moment.utc(String(value)).local().format('DD/MM/YYYY HH:mm')
         }
         app.mount(el)
     },
