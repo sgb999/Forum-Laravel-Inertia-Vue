@@ -99,3 +99,12 @@ REVERB_SCHEME=https
 ```
 
 With the default `log` broadcast driver, messages are still stored and displayed on reload — they just aren't pushed in real time.
+
+### Deploying with Kamal 2
+
+Production deploys use [Kamal 2](https://kamal-deploy.org/) with the self-contained `production` stage in `docker/php/Dockerfile` (Nginx + PHP-FPM under Supervisord on port 80, healthcheck at `/up`, plus `worker`, `scheduler` and `reverb` roles).
+
+1. Copy `.kamal/secrets.example` to `.kamal/secrets` (gitignored) and configure your registry token, `APP_KEY`, `APP_URL`, database credentials and Reverb / S3 settings.
+2. Set the target host (`export KAMAL_DEPLOY_HOST=<server-ip>`) or update `config/deploy.yml`.
+3. Bootstrap accessories and deploy on first run: `kamal setup`
+4. Deploy subsequent releases: `kamal deploy`

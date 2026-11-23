@@ -24,3 +24,7 @@ graphify-out
 opencode.json
 
 tests/Browser/Screenshots
+
+.kamal/secrets
+.kamal/secrets.*
+!.kamal/secrets.example

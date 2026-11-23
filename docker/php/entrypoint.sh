@@ -3,6 +3,7 @@ set -e
 
 # Setup storage and cache directories
 mkdir -p \
+    storage/app/public \
     storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache \
@@ -12,6 +13,11 @@ mkdir -p \
 # Fix permissions
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
+# Ensure public/storage symlink exists when storage is mounted as a persistent volume
+if [ ! -e public/storage ] && [ ! -L public/storage ]; then
+    ln -s ../storage/app/public public/storage 2>/dev/null || true
+fi
 
 # Development specific initialization
 if [ "$APP_ENV" != "production" ]; then

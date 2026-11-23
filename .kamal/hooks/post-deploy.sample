@@ -1,0 +1,5 @@
+#!/usr/bin/env sh
+
+# Example post-deploy hook: run migrations, link public storage, and warm Laravel caches
+# kamal app exec -p "php artisan storage:link && php artisan migrate --force && php artisan optimize"
+exit 0
