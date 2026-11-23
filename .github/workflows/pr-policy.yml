@@ -45,8 +45,8 @@ jobs:
             err "Missing linked issue. Add 'Closes #<issue>' or 'Refs #<issue>' to the PR description (other keywords such as 'Fixes', or 'Closes:' with a colon, are not accepted)."
           fi
 
-          # 2. Branch name: feature/{issue_id} or hotfix/{issue_id}, id == linked issue.
-          if [[ "$HEAD_REF" =~ ^(feature|hotfix)/([0-9]+)$ ]]; then
+          # 2. Branch name: feature/{issue_id}, dependabot/{issue_id}, or hotfix/{issue_id}, id == linked issue.
+          if [[ "$HEAD_REF" =~ ^(feature|dependabot|hotfix)/([0-9]+)$ ]]; then
             kind="${BASH_REMATCH[1]}"
             id="${BASH_REMATCH[2]}"
 
@@ -59,9 +59,9 @@ jobs:
             fi
 
             # 3 & 4. Target branch rules.
-            if [ "$kind" = "feature" ]; then
+            if [ "$kind" = "feature" ] || [ "$kind" = "dependabot" ]; then
               if [ "$BASE_REF" != "staging" ]; then
-                err "feature/* PRs must target 'staging' (this PR targets '$safe_base')."
+                err "$kind/* PRs must target 'staging' (this PR targets '$safe_base')."
               fi
             else
               if [ "$BASE_REF" = "master" ]; then
@@ -73,7 +73,7 @@ jobs:
               fi
             fi
           else
-            err "Branch name '$safe_head' is invalid. Use 'feature/<issue_id>' or 'hotfix/<issue_id>' (e.g. feature/123)."
+            err "Branch name '$safe_head' is invalid. Use 'feature/<issue_id>', 'dependabot/<issue_id>' or 'hotfix/<issue_id>' (e.g. feature/123)."
           fi
 
           if [ "$fail" -ne 0 ]; then

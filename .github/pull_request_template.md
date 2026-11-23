@@ -1,4 +1,4 @@
-<!-- Title: exactly your branch name, e.g. "feature/123" or "hotfix/45" -->
+<!-- Title: exactly your branch name, e.g. "feature/123", "dependabot/181" or "hotfix/45" -->
 Closes #
 
 ## Outcome
