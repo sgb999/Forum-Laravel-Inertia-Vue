@@ -1,7 +1,7 @@
 <template>
     <div class="container">
         <div class="row">
-            <h2 class="col">Topics</h2>
+            <h1 class="col h2">Topics</h1>
             <inertia-link
                 v-if="$page.props.auth.login"
                   class="btn button-dark col-2"

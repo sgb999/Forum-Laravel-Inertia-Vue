@@ -1,7 +1,7 @@
 <template>
     <Head><title>Categories</title></Head>
     <div class="container">
-        <h2>Categories</h2>
+        <h1 class="h2">Categories</h1>
         <hr>
         <inertia-link v-for="category in categories"
            :href="route('post.show',{ category_id: category.id})">
