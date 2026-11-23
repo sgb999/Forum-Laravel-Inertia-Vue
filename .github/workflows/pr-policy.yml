@@ -21,6 +21,7 @@ jobs:
           PR_TITLE: ${{ github.event.pull_request.title }}
           PR_BODY: ${{ github.event.pull_request.body }}
           PR_LABELS: ${{ join(github.event.pull_request.labels.*.name, ',') }}
+          PR_USER: ${{ github.event.pull_request.user.login }}
           HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
           BASE_REPO: ${{ github.repository }}
         run: |
@@ -36,6 +37,19 @@ jobs:
           # master -> staging back-merge, staging -> feature/N update) are exempt.
           if { [ "$HEAD_REF" = "staging" ] || [ "$HEAD_REF" = "master" ]; } && [ "$HEAD_REPO" = "$BASE_REPO" ]; then
             echo "Release/sync PR from $safe_head: exempt from PR policy."
+            exit 0
+          fi
+
+          # Dependabot automated PRs (dependabot[bot] from this repo on a generated multi-part branch
+          # dependabot/<ecosystem>/...) must target staging and are exempt from the issue-link and
+          # exact-title rules.
+          if [ "${PR_USER:-}" = "dependabot[bot]" ] && [ "$HEAD_REPO" = "$BASE_REPO" ] && [[ "$HEAD_REF" =~ ^dependabot/[^/]+/.+$ ]]; then
+            if [ "$BASE_REF" != "staging" ]; then
+              err "dependabot[bot] PRs must target 'staging' (this PR targets '$safe_base')."
+              echo "See docs/PR-POLICY.md for the rules."
+              exit 1
+            fi
+            echo "Dependabot automated PR ($safe_head -> $safe_base): PR policy OK."
             exit 0
           fi
 

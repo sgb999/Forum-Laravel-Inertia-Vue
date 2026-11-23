@@ -13,6 +13,8 @@ Enforced by the `pr-policy` check (`.github/workflows/pr-policy.yml`).
 
 Release and sync PRs from this repo's own `staging` or `master` are exempt from rules 1-5: the `staging` -> `master` release, the `master` -> `staging` back-merge, and `staging` -> `feature/N` updates.
 
+Automated Dependabot PRs authored by `dependabot[bot]` from this repository on a generated `dependabot/<ecosystem>/...` branch targeting `staging` are exempt from the linked-issue and exact-title rules (rules 1, 2, and 5), while still required to target `staging`. Ordinary contributors or bots using the `dependabot/` prefix must use `dependabot/{issue_id}` and follow rules 1-5.
+
 ## Issues and auto-close
 
 GitHub only auto-closes issues (`Closes #N`) when the PR is merged into the **default branch**, which is `master`. Issues for feature PRs merged into `staging` therefore stay open until the release PR lands on `master`. This is expected; close them at release or reference them in the release PR.
