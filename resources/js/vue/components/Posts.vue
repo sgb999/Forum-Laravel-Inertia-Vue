@@ -6,7 +6,7 @@
            v-for="topic in topics"
             class="card">
             <div class="card-header">
-                <inertia-link :href="route('post.index', topic.id)"><h3>{{topic.title}}</h3></inertia-link>
+                <inertia-link :href="route('post.index', topic.id)"><h3 class="topic-title">{{topic.title}}</h3></inertia-link>
             </div>
             <div class="card-body">
                 <inertia-link v-if="topic.user" :href="route('user.profile', topic.user.username)">
@@ -42,6 +42,15 @@ defineProps<{
 a, a:hover, a:focus, a:active
     text-decoration: none
     color: inherit
+.topic-title
+    font-size: 1.25rem
+    margin: 0
+    display: -webkit-box
+    -webkit-line-clamp: 2
+    line-clamp: 2
+    -webkit-box-orient: vertical
+    overflow: hidden
+    overflow-wrap: anywhere
 .container
     display: grid
     grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr))
