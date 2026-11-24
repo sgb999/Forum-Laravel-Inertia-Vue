@@ -32,6 +32,16 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scr
 ##############################################
 FROM node:22-alpine AS frontend
 WORKDIR /app
+# Vite inlines these into the built JS at compile time (see resources/js/echo.ts).
+# Only public Reverb connection details - never pass REVERB_APP_SECRET here.
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
+ENV VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY} \
+    VITE_REVERB_HOST=${VITE_REVERB_HOST} \
+    VITE_REVERB_PORT=${VITE_REVERB_PORT} \
+    VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
 RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \

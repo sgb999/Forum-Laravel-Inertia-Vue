@@ -56,8 +56,8 @@ env:
     DB_PORT: "5432"
     DB_DATABASE: laravel
     DB_USERNAME: laravel
-    BROADCAST_DRIVER: reverb
-    CACHE_DRIVER: database
+    BROADCAST_CONNECTION: reverb
+    CACHE_STORE: database
     FILESYSTEM_DISK: public
     MEDIA_DISK: public
     QUEUE_CONNECTION: database
@@ -100,6 +100,11 @@ builder:
   arch: amd64
   dockerfile: docker/php/Dockerfile
   target: production
+  args:
+    VITE_REVERB_APP_KEY: <%= ENV.fetch("REVERB_APP_KEY", "") %>
+    VITE_REVERB_HOST: <%= ENV.fetch("REVERB_HOST", "") %>
+    VITE_REVERB_PORT: <%= ENV.fetch("REVERB_PORT", "443") %>
+    VITE_REVERB_SCHEME: <%= ENV.fetch("REVERB_SCHEME", "https") %>
 
 # Use accessory services (secrets come from .kamal/secrets).
 accessories:

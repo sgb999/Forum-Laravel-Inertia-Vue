@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    Used only by the `postgres-lock` CI job (see .github/workflows/tests.yml) to run
+    MigrateWithAdvisoryLockTest against a real PostgreSQL service container - advisory
+    locks don't exist on the sqlite connection phpunit.xml forces for the rest of the
+    suite. Run locally with:
+    php ./vendor/bin/pest "-c" phpunit.postgres-ci.xml tests/Feature/MigrateWithAdvisoryLockTest.php
+-->
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="vendor/autoload.php"
+         colors="true"
+>
+    <testsuites>
+        <testsuite name="Feature">
+            <directory>tests/Feature</directory>
+        </testsuite>
+    </testsuites>
+    <source>
+        <include>
+            <directory>app</directory>
+        </include>
+    </source>
+    <php>
+        <server name="APP_ENV" value="testing" force="true" />
+        <server name="APP_MAINTENANCE_DRIVER" value="file" force="true" />
+        <server name="BCRYPT_ROUNDS" value="4" force="true" />
+        <server name="BROADCAST_CONNECTION" value="null" force="true" />
+        <server name="CACHE_STORE" value="array" force="true" />
+        <server name="DB_CONNECTION" value="pgsql" force="true" />
+        <!-- <env> (not <server>) without force, so a real environment variable already set
+             when PHPUnit starts (the CI service container's values, or your own when pointing
+             this at a different Postgres) wins over these CI defaults. phpunit's <server> element
+             always overwrites $_SERVER regardless of "force", so it can't be used for this. -->
+        <env name="DB_HOST" value="127.0.0.1" />
+        <env name="DB_PORT" value="5432" />
+        <env name="DB_DATABASE" value="forum_test" />
+        <env name="DB_USERNAME" value="postgres" />
+        <env name="DB_PASSWORD" value="postgres" />
+        <server name="DB_URL" value="" force="true" />
+        <server name="MAIL_MAILER" value="array" force="true" />
+        <server name="QUEUE_CONNECTION" value="sync" force="true" />
+        <server name="SESSION_DRIVER" value="array" force="true" />
+        <server name="PULSE_ENABLED" value="false" force="true" />
+        <server name="TELESCOPE_ENABLED" value="false" force="true" />
+        <server name="NIGHTWATCH_ENABLED" value="false" force="true" />
+        <server name="BROWSER_HEADLESS" value="true" force="true" />
+    </php>
+</phpunit>
