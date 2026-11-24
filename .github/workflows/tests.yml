@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Validate Kamal deploy config env lookup
+        run: ruby .kamal/validate_env.rb
+
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:

@@ -26,5 +26,7 @@ opencode.json
 tests/Browser/Screenshots
 
 .kamal/secrets
+.kamal/secrets-common
 .kamal/secrets.*
 !.kamal/secrets.example
+!.kamal/secrets.*.example

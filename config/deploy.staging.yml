@@ -1,0 +1,24 @@
+# Staging destination overrides (`kamal <cmd> -d staging`).
+# Shares the production-owned `forum-postgres` accessory container on the
+# `kamal` Docker network, using its own `forum_staging` role and database
+# (created by `docker/postgres/init-staging.sh`).
+service: forum-staging
+
+servers:
+  web:
+    options:
+      publish: "<%= ENV.fetch("FORUM_WEB_PORT", "127.0.0.1:8082") %>:80"
+  reverb:
+    options:
+      publish: "<%= ENV.fetch("FORUM_REVERB_PORT", "127.0.0.1:8092") %>:8080"
+
+proxy:
+  host: <%= ENV.fetch("FORUM_HOST", "staging.forum.example.com") %>
+
+env:
+  clear:
+    DB_DATABASE: forum_staging
+    DB_USERNAME: forum_staging
+
+volumes:
+  - "forum_staging_storage:/var/www/html/storage"

@@ -1,0 +1,52 @@
+# Production destination overrides (`kamal <cmd> -d production`).
+# Owns the single shared `forum-postgres` PostgreSQL 18 accessory container
+# and the `forum-rustfs` object-storage accessory container on the Unraid host.
+servers:
+  web:
+    options:
+      publish: "<%= ENV.fetch("FORUM_WEB_PORT", "127.0.0.1:8081") %>:80"
+  reverb:
+    options:
+      publish: "<%= ENV.fetch("FORUM_REVERB_PORT", "127.0.0.1:8091") %>:8080"
+
+proxy:
+  host: <%= ENV.fetch("FORUM_HOST", "forum.example.com") %>
+
+env:
+  clear:
+    DB_DATABASE: forum_production
+    DB_USERNAME: forum_production
+
+volumes:
+  - "forum_production_storage:/var/www/html/storage"
+
+accessories:
+  postgres:
+    image: postgres:18
+    host: <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+    port: "127.0.0.1:5432:5432"
+    env:
+      clear:
+        POSTGRES_DB: forum_production
+        POSTGRES_USER: forum_production
+      secret:
+        - POSTGRES_PASSWORD
+    files:
+      - docker/postgres/init-staging.sh:/usr/local/bin/init-staging.sh
+    directories:
+      - data:/var/lib/postgresql
+  rustfs:
+    image: rustfs/rustfs:latest
+    host: <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+    port: "127.0.0.1:9000:9000"
+    env:
+      clear:
+        RUSTFS_VOLUMES: /data
+        RUSTFS_ADDRESS: 0.0.0.0:9000
+        RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
+        RUSTFS_CONSOLE_ENABLE: "true"
+      secret:
+        - RUSTFS_ACCESS_KEY
+        - RUSTFS_SECRET_KEY
+    directories:
+      - data:/data

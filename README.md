@@ -102,16 +102,96 @@ With the default `log` broadcast driver, messages are still stored and displayed
 
 The frontend (`resources/js/echo.ts`) also needs `VITE_REVERB_APP_KEY`, `VITE_REVERB_HOST`, `VITE_REVERB_PORT` and `VITE_REVERB_SCHEME`, which Vite inlines into the built JS at compile time rather than reading at runtime. In local dev, `pnpm run dev` reads these from `.env` like any other Vite env var. In the production image, they're passed as Docker build args from the same values as `REVERB_APP_KEY`/`HOST`/`PORT`/`SCHEME` (see `builder.args` in `config/deploy.yml`) - the app key is public by design, but `REVERB_APP_SECRET` must never be passed as a build arg.
 
-`builder.args` is ERB evaluated by the `kamal` CLI against the shell environment of whoever runs it - it does **not** read `.kamal/secrets`. Before running `kamal build` or `kamal deploy`, export `REVERB_APP_KEY`, `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` in that shell (e.g. `set -a; source .env.production; set +a`). `REVERB_APP_KEY` and `REVERB_HOST` have no fallback and will raise `KeyError` (failing the build) if left unset, rather than silently baking in an empty value; `REVERB_PORT` and `REVERB_SCHEME` default to `443`/`https` if omitted.
+`builder.args` and `servers.reverb.proxy.host` are ERB evaluated by the `kamal` CLI against the shell environment of whoever runs it - they do **not** read `.kamal/secrets.<destination>`. Before running `kamal build` or `kamal deploy`, export `REVERB_APP_KEY`, `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` in that shell (e.g. `set -a; source .env.staging.deploy; set +a`). `REVERB_APP_KEY` and `REVERB_HOST` are validated with `require_env!` (checked in CI by `.kamal/validate_env.rb`) and raise `KeyError` (failing the build) if unset **or** blank/whitespace-only, rather than silently baking in an empty value; `REVERB_PORT` and `REVERB_SCHEME` default to `443`/`https` if omitted.
 
-### Deploying with Kamal 2
+### Deploying staging and production on Unraid
 
-Production deploys use [Kamal 2](https://kamal-deploy.org/) with the self-contained `production` stage in `docker/php/Dockerfile` (Nginx + PHP-FPM under Supervisord on port 80, healthcheck at `/up`, plus `worker`, `scheduler` and `reverb` roles). On container startup in production (`APP_ENV=production`), `docker/php/entrypoint.sh` automatically runs `php artisan migrate --force` before starting Supervisord or the role command, so schema migrations succeed before web traffic or queue workers start.
+Deploys use [Kamal 2](https://kamal-deploy.org/) with a shared base configuration in `config/deploy.yml` (`require_destination: true`) and per-destination overrides in `config/deploy.staging.yml` (`-d staging`) and `config/deploy.production.yml` (`-d production`). Both destinations deploy to the same Unraid server using the self-contained `production` stage in `docker/php/Dockerfile` (Nginx + PHP-FPM under Supervisord on port 80, healthcheck at `/up`, plus `worker`, `scheduler` and `reverb` roles). On container startup (`APP_ENV=production`), `docker/php/entrypoint.sh` runs `php artisan migrate:owned --force` so the `web` role holds the PostgreSQL advisory lock and finishes migrations before `worker`, `scheduler` and `reverb` start.
 
-1. Copy `.kamal/secrets.example` to `.kamal/secrets` (gitignored and excluded by `.dockerignore`) and configure your registry token, `APP_KEY`, `APP_URL`, database credentials and Reverb / S3 settings.
-2. Set the target host (`export KAMAL_DEPLOY_HOST=<server-ip>`) or update `config/deploy.yml`. Also export `REVERB_APP_KEY`, `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` in the same shell (e.g. `set -a; source .env.production; set +a`) - `builder.args` reads these directly from the shell environment, not from `.kamal/secrets`, and `kamal build`/`kamal deploy` will fail fast if `REVERB_APP_KEY` or `REVERB_HOST` is missing.
-3. Bootstrap accessories and deploy on first run: `kamal setup` (starts PostgreSQL 18 and RustFS accessories, runs database migrations via the production entrypoint, and starts `web`, `worker`, `scheduler` and `reverb`).
-4. (Optional) Seed initial forum categories on a fresh database: `kamal app exec -p "php artisan db:seed --force"`.
-5. Deploy subsequent releases: `kamal deploy`
+#### Architecture & Isolation on a Single Unraid Host
 
-This is a portfolio project with no real production data: the Kamal PostgreSQL accessory starts empty and is filled by migrations (and the optional seeder above), same as any other fresh deploy. Once the new site is confirmed up, the old cloud-hosted database can simply be retired.
+| Resource | Staging (`-d staging`) | Production (`-d production`) |
+| --- | --- | --- |
+| Kamal `service` / container prefix | `forum-staging` (`forum-staging-<role>-staging-<sha>`) | `forum` (`forum-<role>-production-<sha>`) |
+| Secrets file (gitignored) | `.kamal/secrets.staging` (from `.kamal/secrets.staging.example`) | `.kamal/secrets.production` (from `.kamal/secrets.production.example`) |
+| Persistent storage volume | `forum_staging_storage:/var/www/html/storage` | `forum_production_storage:/var/www/html/storage` |
+| Shared Postgres 18 container (`DB_HOST`) | Connects to `forum-postgres:5432` on the `kamal` network (defines no accessories) | Owns accessory `forum-postgres` (`127.0.0.1:5432:5432`) and `forum-rustfs` (`127.0.0.1:9000:9000`) |
+| Postgres database & role | `DB_DATABASE=forum_staging`, `DB_USERNAME=forum_staging` (no `CONNECT` privilege on `forum_production`) | `DB_DATABASE=forum_production`, `DB_USERNAME=forum_production` |
+| RustFS S3 bucket (`AWS_BUCKET`) | Separate bucket & credentials (e.g. `forum-staging`) | Separate bucket & credentials (e.g. `forum-production`) |
+| Web host (`FORUM_HOST`) & published port (`FORUM_WEB_PORT`) | Placeholder `staging.forum.example.com`, `127.0.0.1:8082:80` | Placeholder `forum.example.com`, `127.0.0.1:8081:80` |
+| Reverb host (`REVERB_HOST`) & published port (`FORUM_REVERB_PORT`) | Placeholder `reverb-staging.forum.example.com`, `127.0.0.1:8092:8080` | Placeholder `reverb.forum.example.com`, `127.0.0.1:8091:8080` |
+
+#### Port, `kamal-proxy`, and Reverb Public TLS Routing
+
+- **Non-80/443 host ports:** Unraid's own web UI binds host ports `80` and `443`. Kamal runs a single `kamal-proxy` container per host; `config/deploy.yml` configures `proxy.run` to publish `kamal-proxy` on `KAMAL_PROXY_HTTP_PORT` (placeholder default `8080`) and `KAMAL_PROXY_HTTPS_PORT` (placeholder default `8443`) so `80`/`443` are never touched. Both destinations also publish distinct host ports on their `web` (`FORUM_WEB_PORT`, defaults `127.0.0.1:8082` staging / `127.0.0.1:8081` production) and `reverb` (`FORUM_REVERB_PORT`, defaults `127.0.0.1:8092` staging / `127.0.0.1:8091` production) containers if you prefer forwarding per-port instead of through `kamal-proxy`.
+- **Reverb public route:** `servers.reverb` runs on port `8080` in its own container and registers its own `kamal-proxy` route (`host: <%= require_env!("REVERB_HOST") %>`, `app_port: 8080`, `ssl: false`, `healthcheck.path: /up`), matching the `REVERB_HOST`/`VITE_REVERB_HOST` hostname that Laravel Echo (`resources/js/echo.ts`) connects to.
+- **Unraid external reverse proxy / tunnel (Cloudflare Tunnel, Nginx Proxy Manager, SWAG, Caddy, or Traefik):** Terminate public TLS (`https` / `wss` on port `443`, matching `REVERB_PORT=443` and `REVERB_SCHEME=https`) for all four hostnames — staging web (`FORUM_HOST`), staging Reverb (`REVERB_HOST`), production web (`FORUM_HOST`), and production Reverb (`REVERB_HOST`) — and forward them over plain HTTP (`http://127.0.0.1:<KAMAL_PROXY_HTTP_PORT>`, preserving the `Host` header) or directly to each role's published `FORUM_WEB_PORT` / `FORUM_REVERB_PORT`. Enable **WebSockets support** (`Upgrade: websocket` and `Connection: Upgrade` headers) on both Reverb routes so browser WebSocket connections (`/app/*`) and Laravel's server-to-Reverb broadcast API requests (`/apps/*`) reach the Reverb container.
+
+#### Exact Commands in Order
+
+1. **First-time secrets & environment setup:**
+   Copy both secrets templates to their gitignored destination files and fill in your real credentials:
+   ```bash
+   cp .kamal/secrets.staging.example .kamal/secrets.staging
+   cp .kamal/secrets.production.example .kamal/secrets.production
+   ```
+   Supply your real values for:
+   - **Host & proxy ports (shell env):** `KAMAL_DEPLOY_HOST`, and optionally `KAMAL_PROXY_HTTP_PORT` (default `8080`) and `KAMAL_PROXY_HTTPS_PORT` (default `8443`).
+   - **Per-destination shell env (exported before each build/deploy):** `FORUM_HOST`, `REVERB_HOST`, `REVERB_APP_KEY`, `REVERB_PORT` (default `443`), `REVERB_SCHEME` (default `https`), `FORUM_WEB_PORT` (defaults `127.0.0.1:8082` staging / `127.0.0.1:8081` production), and `FORUM_REVERB_PORT` (defaults `127.0.0.1:8092` staging / `127.0.0.1:8091` production).
+   - **Shared secrets (`.kamal/secrets.staging` & `.kamal/secrets.production`):** `KAMAL_REGISTRY_PASSWORD`, `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY` (production accessory boot), and `AWS_ENDPOINT` (default `http://forum-rustfs:9000`).
+   - **Per-destination secrets (distinct values in `.kamal/secrets.staging` vs `.kamal/secrets.production`):** `APP_KEY`, `APP_URL`, `DB_PASSWORD` (plus `POSTGRES_PASSWORD=$DB_PASSWORD` in `.kamal/secrets.production`), `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_BUCKET` (`forum-staging` vs `forum-production`).
+
+2. **Bootstrap the shared PostgreSQL 18 & RustFS accessories and initialize the staging role/DB:**
+   Boot the accessories (owned by the `production` destination) and run the mounted idempotent init script (`docker/postgres/init-staging.sh`) to create the `forum_staging` login role and `forum_staging` database and revoke `CONNECT` on `forum_production` from `forum_staging`:
+   ```bash
+   export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
+   export REVERB_APP_KEY=<production-reverb-app-key>
+   export REVERB_HOST=<reverb.your-domain.tld>
+
+   kamal accessory boot all -d production
+   kamal accessory exec postgres -d production --reuse \
+     "sh -c 'STAGING_DB_PASSWORD=\"<staging-db-password>\" /usr/local/bin/init-staging.sh'"
+   ```
+   *(Create the `forum-staging` and `forum-production` buckets and per-environment access keys in the RustFS console before deploying).*
+
+3. **Deploy staging (`-d staging`):**
+   Export the staging build/routing variables and deploy:
+   ```bash
+   export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
+   export FORUM_HOST=<staging.your-domain.tld>
+   export REVERB_HOST=<reverb-staging.your-domain.tld>
+   export REVERB_APP_KEY=<staging-reverb-app-key>
+   export REVERB_PORT=443
+   export REVERB_SCHEME=https
+
+   kamal setup -d staging
+   # (Optional) Seed initial forum categories on a fresh staging database:
+   kamal app exec -d staging -p "php artisan db:seed --force"
+   # Subsequent staging releases:
+   kamal deploy -d staging
+   ```
+
+4. **Verify staging (rollout checklist) before touching production:**
+   Keep the previous deployment and database available until all five checks pass on staging:
+   - [ ] **All four roles start:** `kamal app details -d staging` shows `web`, `worker`, `scheduler`, and `reverb` running and healthy on `forum_staging`.
+   - [ ] **Login persists:** Sign in via the browser and reload/navigate across pages to confirm database-backed sessions (`sessions` table) persist.
+   - [ ] **Queued job completes:** Trigger or dispatch a queued job and confirm `worker` consumes it from the `jobs` table with `0` rows added to `failed_jobs`.
+   - [ ] **Upload survives a redeploy:** Upload an avatar or banner image, run `kamal deploy -d staging`, and confirm the uploaded image still loads after the new containers replace the old ones.
+   - [ ] **Live chat delivery works end-to-end:** Open a chat between two signed-in users in two separate browser sessions, send a message in one browser, and confirm it appears in the second authorized browser in real time without a page refresh.
+
+5. **Deploy production (`-d production`):**
+   Once the staging checklist passes, export the production build/routing variables and deploy production:
+   ```bash
+   export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
+   export FORUM_HOST=<forum.your-domain.tld>
+   export REVERB_HOST=<reverb.your-domain.tld>
+   export REVERB_APP_KEY=<production-reverb-app-key>
+   export REVERB_PORT=443
+   export REVERB_SCHEME=https
+
+   kamal deploy -d production
+   # (Optional) Seed initial forum categories on a fresh production database:
+   kamal app exec -d production -p "php artisan db:seed --force"
+   ```
+
+This is a portfolio project with no real production data: the Kamal PostgreSQL accessory starts empty and is filled by migrations (and the optional seeder above), same as any other fresh deploy. Once the new site is confirmed up and the staging/production rollout checklist passes, the old cloud-hosted database can simply be retired.

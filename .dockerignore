@@ -4,8 +4,10 @@
 .env.*
 !.env.example
 .kamal/secrets
+.kamal/secrets-common
 .kamal/secrets.*
 !.kamal/secrets.example
+!.kamal/secrets.*.example
 vendor
 node_modules
 .pnpm-store

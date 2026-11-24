@@ -1,5 +1,20 @@
+<%
+  # Shared by builder.args and the reverb proxy host below: ENV.fetch alone
+  # only catches an unset var, not one exported as an empty/whitespace string
+  # (which would silently bake a blank key/host into the built JS, or give
+  # kamal-proxy an empty Host to route on).
+  def require_env!(name)
+    ENV.fetch(name).tap do |value|
+      raise KeyError, "#{name} is set but blank" if value.strip.empty?
+    end
+  end
+%>
 # Name of your application. Used to uniquely identify containers.
 service: forum
+
+# Every deploy must target -d staging or -d production so staging and
+# production containers, volumes, secrets, and databases stay separated.
+require_destination: true
 
 # Name of the container image.
 image: sgb999/forum-laravel-inertia-vue
@@ -27,14 +42,36 @@ servers:
     hosts:
       - <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
     cmd: php artisan reverb:start --host=0.0.0.0 --port=8080
+    # Reverb never shares the web role's port 80 - without its own proxy
+    # entry, kamal-proxy has no route for it at all, so WebSocket upgrades
+    # and the Pusher-compatible broadcast API (/app/*, /apps/*) 404 even
+    # though the web healthcheck passes. host-route them to this role by
+    # REVERB_HOST, the same public hostname Echo (resources/js/echo.ts)
+    # already connects to. ssl: false matches the top-level web proxy:
+    # TLS for both hosts is terminated by the external reverse proxy on
+    # Unraid (see README), which forwards plain HTTP/WS to kamal-proxy.
+    # Reverb answers GET /up with 200 (vendor/laravel/reverb's own
+    # HealthCheckController), so the default healthcheck path works as-is.
+    proxy:
+      host: <%= require_env!("REVERB_HOST") %>
+      app_port: 8080
+      ssl: false
+      healthcheck:
+        path: /up
+        interval: 3
 
-# Enable SSL auto certification via Let's Encrypt and allow for multiple apps on a single web server.
+# One kamal-proxy container runs on the Unraid host and routes by Host header
+# across both destinations. Because Unraid's own web UI binds host ports 80
+# and 443, kamal-proxy publishes on non-80/443 host ports via proxy.run.
 proxy:
   ssl: false
   app_port: 80
   healthcheck:
     path: /up
     interval: 3
+  run:
+    http_port: <%= Integer(ENV.fetch("KAMAL_PROXY_HTTP_PORT", "8080")) %>
+    https_port: <%= Integer(ENV.fetch("KAMAL_PROXY_HTTPS_PORT", "8443")) %>
 
 # Credentials for your image host.
 registry:
@@ -43,7 +80,7 @@ registry:
   password:
     - KAMAL_REGISTRY_PASSWORD
 
-# Inject ENV variables into containers (secrets come from .kamal/secrets).
+# Inject ENV variables into containers (secrets come from .kamal/secrets.<destination>).
 env:
   clear:
     APP_NAME: Forum
@@ -54,8 +91,6 @@ env:
     DB_CONNECTION: pgsql
     DB_HOST: forum-postgres
     DB_PORT: "5432"
-    DB_DATABASE: laravel
-    DB_USERNAME: laravel
     BROADCAST_CONNECTION: reverb
     CACHE_STORE: database
     FILESYSTEM_DISK: public
@@ -88,10 +123,6 @@ aliases:
   logs: app logs -f
   artisan: app exec --interactive --reuse "php artisan"
 
-# Persistent storage volume for uploaded media and framework state across deploys.
-volumes:
-  - "forum_storage:/var/www/html/storage"
-
 # Bridge fingerprinted Vite assets between versions to avoid 404s on in-flight requests.
 asset_path: /var/www/html/public/build
 
@@ -101,37 +132,7 @@ builder:
   dockerfile: docker/php/Dockerfile
   target: production
   args:
-    VITE_REVERB_APP_KEY: <%= ENV.fetch("REVERB_APP_KEY") %>
-    VITE_REVERB_HOST: <%= ENV.fetch("REVERB_HOST") %>
+    VITE_REVERB_APP_KEY: <%= require_env!("REVERB_APP_KEY") %>
+    VITE_REVERB_HOST: <%= require_env!("REVERB_HOST") %>
     VITE_REVERB_PORT: <%= ENV.fetch("REVERB_PORT", "443") %>
     VITE_REVERB_SCHEME: <%= ENV.fetch("REVERB_SCHEME", "https") %>
-
-# Use accessory services (secrets come from .kamal/secrets).
-accessories:
-  postgres:
-    image: postgres:18
-    host: <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
-    port: "127.0.0.1:5432:5432"
-    env:
-      clear:
-        POSTGRES_DB: laravel
-        POSTGRES_USER: laravel
-      secret:
-        - POSTGRES_PASSWORD
-    directories:
-      - data:/var/lib/postgresql
-  rustfs:
-    image: rustfs/rustfs:latest
-    host: <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
-    port: "127.0.0.1:9000:9000"
-    env:
-      clear:
-        RUSTFS_VOLUMES: /data
-        RUSTFS_ADDRESS: 0.0.0.0:9000
-        RUSTFS_CONSOLE_ADDRESS: 0.0.0.0:9001
-        RUSTFS_CONSOLE_ENABLE: "true"
-      secret:
-        - RUSTFS_ACCESS_KEY
-        - RUSTFS_SECRET_KEY
-    directories:
-      - data:/data
