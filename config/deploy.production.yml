@@ -1,13 +1,11 @@
 # Production destination overrides (`kamal <cmd> -d production`).
 # Owns the single shared `forum-postgres` PostgreSQL 18 accessory container
-# and the `forum-rustfs` object-storage accessory container on the Unraid host.
-servers:
-  web:
-    options:
-      publish: "<%= ENV.fetch("FORUM_WEB_PORT", "127.0.0.1:8081") %>:80"
-  reverb:
-    options:
-      publish: "<%= ENV.fetch("FORUM_REVERB_PORT", "127.0.0.1:8091") %>:8080"
+# (bootstrapped with the dedicated `forum_admin` superuser) and the `forum-rustfs`
+# object-storage accessory container on the Unraid host. Production app containers
+# authenticate as the non-superuser `forum_production` role (created by
+# `docker/postgres/init-staging.sh`). Traffic reaches `web` and `reverb`
+# exclusively through the shared `kamal-proxy` container routed by Host.
+image: sgb999/forum-laravel-inertia-vue-production
 
 proxy:
   host: <%= ENV.fetch("FORUM_HOST", "forum.example.com") %>
@@ -27,8 +25,8 @@ accessories:
     port: "127.0.0.1:5432:5432"
     env:
       clear:
-        POSTGRES_DB: forum_production
-        POSTGRES_USER: forum_production
+        POSTGRES_DB: postgres
+        POSTGRES_USER: forum_admin
       secret:
         - POSTGRES_PASSWORD
     files:

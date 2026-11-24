@@ -113,19 +113,21 @@ Deploys use [Kamal 2](https://kamal-deploy.org/) with a shared base configuratio
 | Resource | Staging (`-d staging`) | Production (`-d production`) |
 | --- | --- | --- |
 | Kamal `service` / container prefix | `forum-staging` (`forum-staging-<role>-staging-<sha>`) | `forum` (`forum-<role>-production-<sha>`) |
+| Container image (`image`) | `ghcr.io/sgb999/forum-laravel-inertia-vue-staging:<sha>` | `ghcr.io/sgb999/forum-laravel-inertia-vue-production:<sha>` |
 | Secrets file (gitignored) | `.kamal/secrets.staging` (from `.kamal/secrets.staging.example`) | `.kamal/secrets.production` (from `.kamal/secrets.production.example`) |
 | Persistent storage volume | `forum_staging_storage:/var/www/html/storage` | `forum_production_storage:/var/www/html/storage` |
-| Shared Postgres 18 container (`DB_HOST`) | Connects to `forum-postgres:5432` on the `kamal` network (defines no accessories) | Owns accessory `forum-postgres` (`127.0.0.1:5432:5432`) and `forum-rustfs` (`127.0.0.1:9000:9000`) |
-| Postgres database & role | `DB_DATABASE=forum_staging`, `DB_USERNAME=forum_staging` (no `CONNECT` privilege on `forum_production`) | `DB_DATABASE=forum_production`, `DB_USERNAME=forum_production` |
-| RustFS S3 bucket (`AWS_BUCKET`) | Separate bucket & credentials (e.g. `forum-staging`) | Separate bucket & credentials (e.g. `forum-production`) |
-| Web host (`FORUM_HOST`) & published port (`FORUM_WEB_PORT`) | Placeholder `staging.forum.example.com`, `127.0.0.1:8082:80` | Placeholder `forum.example.com`, `127.0.0.1:8081:80` |
-| Reverb host (`REVERB_HOST`) & published port (`FORUM_REVERB_PORT`) | Placeholder `reverb-staging.forum.example.com`, `127.0.0.1:8092:8080` | Placeholder `reverb.forum.example.com`, `127.0.0.1:8091:8080` |
+| Shared Postgres 18 container (`DB_HOST`) | Connects to `forum-postgres:5432` on the `kamal` network (defines no accessories) | Owns accessory `forum-postgres` (`127.0.0.1:5432:5432`, cluster superuser `POSTGRES_USER=forum_admin`, `POSTGRES_DB=postgres`) and `forum-rustfs` (`127.0.0.1:9000:9000`) |
+| Postgres database & non-superuser role | `DB_DATABASE=forum_staging`, `DB_USERNAME=forum_staging` (no superuser, no `CONNECT` on `forum_production`) | `DB_DATABASE=forum_production`, `DB_USERNAME=forum_production` (no superuser, no `CONNECT` on `forum_staging`) |
+| RustFS S3 bucket (`AWS_BUCKET`) | Separate bucket & scoped credentials (`forum-staging`, `STAGING_AWS_ACCESS_KEY_ID`) | Separate bucket & scoped credentials (`forum-production`, `PRODUCTION_AWS_ACCESS_KEY_ID`; no fallback to `RUSTFS_ACCESS_KEY`) |
+| Web host (`FORUM_HOST`) & edge port | Placeholder `staging.forum.example.com` (edge port `8082` -> `kamal-proxy`) | Placeholder `forum.example.com` (edge port `8081` -> `kamal-proxy`) |
+| Reverb host (`REVERB_HOST`) & edge port | Placeholder `reverb-staging.forum.example.com` (edge port `8092` -> `kamal-proxy`) | Placeholder `reverb.forum.example.com` (edge port `8091` -> `kamal-proxy`) |
 
 #### Port, `kamal-proxy`, and Reverb Public TLS Routing
 
-- **Non-80/443 host ports:** Unraid's own web UI binds host ports `80` and `443`. Kamal runs a single `kamal-proxy` container per host; `config/deploy.yml` configures `proxy.run` to publish `kamal-proxy` on `KAMAL_PROXY_HTTP_PORT` (placeholder default `8080`) and `KAMAL_PROXY_HTTPS_PORT` (placeholder default `8443`) so `80`/`443` are never touched. Both destinations also publish distinct host ports on their `web` (`FORUM_WEB_PORT`, defaults `127.0.0.1:8082` staging / `127.0.0.1:8081` production) and `reverb` (`FORUM_REVERB_PORT`, defaults `127.0.0.1:8092` staging / `127.0.0.1:8091` production) containers if you prefer forwarding per-port instead of through `kamal-proxy`.
+- **No role-level container port publishing (zero-downtime rolling deploys):** Kamal starts each new `web` and `reverb` container and waits for its healthcheck to pass before stopping the old container. Because two containers on the same host cannot bind the same fixed host port simultaneously, neither `config/deploy.staging.yml` nor `config/deploy.production.yml` sets `options.publish` on `servers.web` or `servers.reverb`. All traffic to `web` (container port `80`) and `reverb` (container port `8080`) flows exclusively through the shared `kamal-proxy` container, routed by `Host` header (`proxy.host` and `servers.reverb.proxy.host`).
+- **Environment ports at the proxy / Unraid edge:** Unraid's own web UI binds host ports `80` and `443`. `config/deploy.yml` configures `proxy.run` to publish `kamal-proxy` on `KAMAL_PROXY_HTTP_PORT` (default `8080`) and `KAMAL_PROXY_HTTPS_PORT` (default `8443`) so `80`/`443` are never touched. Separate port numbers for staging and production live at the Unraid external reverse proxy / edge listener (for example `8082` for staging web, `8092` for staging Reverb, `8081` for production web, and `8091` for production Reverb, or standard public TLS `443` per hostname), which forwards requests to `http://127.0.0.1:<KAMAL_PROXY_HTTP_PORT>` with the matching `Host` header (`FORUM_HOST` or `REVERB_HOST`).
 - **Reverb public route:** `servers.reverb` runs on port `8080` in its own container and registers its own `kamal-proxy` route (`host: <%= require_env!("REVERB_HOST") %>`, `app_port: 8080`, `ssl: false`, `healthcheck.path: /up`), matching the `REVERB_HOST`/`VITE_REVERB_HOST` hostname that Laravel Echo (`resources/js/echo.ts`) connects to.
-- **Unraid external reverse proxy / tunnel (Cloudflare Tunnel, Nginx Proxy Manager, SWAG, Caddy, or Traefik):** Terminate public TLS (`https` / `wss` on port `443`, matching `REVERB_PORT=443` and `REVERB_SCHEME=https`) for all four hostnames — staging web (`FORUM_HOST`), staging Reverb (`REVERB_HOST`), production web (`FORUM_HOST`), and production Reverb (`REVERB_HOST`) — and forward them over plain HTTP (`http://127.0.0.1:<KAMAL_PROXY_HTTP_PORT>`, preserving the `Host` header) or directly to each role's published `FORUM_WEB_PORT` / `FORUM_REVERB_PORT`. Enable **WebSockets support** (`Upgrade: websocket` and `Connection: Upgrade` headers) on both Reverb routes so browser WebSocket connections (`/app/*`) and Laravel's server-to-Reverb broadcast API requests (`/apps/*`) reach the Reverb container.
+- **Unraid external reverse proxy / tunnel (Cloudflare Tunnel, Nginx Proxy Manager, SWAG, Caddy, or Traefik):** Terminate public TLS (`https` / `wss` on port `443`, matching `REVERB_PORT=443` and `REVERB_SCHEME=https`) or bind your per-environment edge ports (`8082`/`8092` staging, `8081`/`8091` production) for all four hostnames — staging web (`FORUM_HOST`), staging Reverb (`REVERB_HOST`), production web (`FORUM_HOST`), and production Reverb (`REVERB_HOST`) — and forward them over plain HTTP to `http://127.0.0.1:<KAMAL_PROXY_HTTP_PORT>` while preserving/setting the destination `Host` header. Enable **WebSockets support** (`Upgrade: websocket` and `Connection: Upgrade` headers) on both Reverb routes so browser WebSocket connections (`/app/*`) and Laravel's server-to-Reverb broadcast API requests (`/apps/*`) reach the Reverb container.
 
 #### Exact Commands in Order
 
@@ -137,12 +139,12 @@ Deploys use [Kamal 2](https://kamal-deploy.org/) with a shared base configuratio
    ```
    Supply your real values for:
    - **Host & proxy ports (shell env):** `KAMAL_DEPLOY_HOST`, and optionally `KAMAL_PROXY_HTTP_PORT` (default `8080`) and `KAMAL_PROXY_HTTPS_PORT` (default `8443`).
-   - **Per-destination shell env (exported before each build/deploy):** `FORUM_HOST`, `REVERB_HOST`, `REVERB_APP_KEY`, `REVERB_PORT` (default `443`), `REVERB_SCHEME` (default `https`), `FORUM_WEB_PORT` (defaults `127.0.0.1:8082` staging / `127.0.0.1:8081` production), and `FORUM_REVERB_PORT` (defaults `127.0.0.1:8092` staging / `127.0.0.1:8091` production).
-   - **Shared secrets (`.kamal/secrets.staging` & `.kamal/secrets.production`):** `KAMAL_REGISTRY_PASSWORD`, `RUSTFS_ACCESS_KEY`, `RUSTFS_SECRET_KEY` (production accessory boot), and `AWS_ENDPOINT` (default `http://forum-rustfs:9000`).
-   - **Per-destination secrets (distinct values in `.kamal/secrets.staging` vs `.kamal/secrets.production`):** `APP_KEY`, `APP_URL`, `DB_PASSWORD` (plus `POSTGRES_PASSWORD=$DB_PASSWORD` in `.kamal/secrets.production`), `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, and `AWS_BUCKET` (`forum-staging` vs `forum-production`).
+   - **Per-destination shell env (exported before each build/deploy):** `FORUM_HOST`, `REVERB_HOST`, `REVERB_APP_KEY`, `REVERB_PORT` (default `443`), and `REVERB_SCHEME` (default `https`).
+   - **Accessory admin secrets (`.kamal/secrets.production` only):** `POSTGRES_PASSWORD` (for the `POSTGRES_USER=forum_admin` PostgreSQL superuser; must be distinct from `DB_PASSWORD`), `RUSTFS_ACCESS_KEY`, and `RUSTFS_SECRET_KEY` (for the `forum-rustfs` accessory admin; must be distinct from the app's bucket-scoped `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
+   - **Per-destination app secrets (distinct values in `.kamal/secrets.staging` vs `.kamal/secrets.production`):** `KAMAL_REGISTRY_PASSWORD`, `APP_KEY`, `APP_URL`, `DB_PASSWORD` (for the non-superuser `forum_staging` and `forum_production` roles), `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (scoped to each destination's own bucket), `AWS_BUCKET` (`forum-staging` vs `forum-production`), and `AWS_ENDPOINT` (default `http://forum-rustfs:9000`).
 
-2. **Bootstrap the shared PostgreSQL 18 & RustFS accessories and initialize the staging role/DB:**
-   Boot the accessories (owned by the `production` destination) and run the mounted idempotent init script (`docker/postgres/init-staging.sh`) to create the `forum_staging` login role and `forum_staging` database and revoke `CONNECT` on `forum_production` from `forum_staging`:
+2. **Bootstrap the shared PostgreSQL 18 & RustFS accessories and initialize both non-superuser roles/DBs:**
+   Boot the accessories (owned by the `production` destination) and run the mounted idempotent init script (`docker/postgres/init-staging.sh`), which waits for `pg_isready` as `forum_admin` and creates/updates the non-superuser `forum_production` and `forum_staging` login roles and databases while revoking cross-environment `CONNECT` privileges:
    ```bash
    export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
    export REVERB_APP_KEY=<production-reverb-app-key>
@@ -150,12 +152,12 @@ Deploys use [Kamal 2](https://kamal-deploy.org/) with a shared base configuratio
 
    kamal accessory boot all -d production
    kamal accessory exec postgres -d production --reuse \
-     "sh -c 'STAGING_DB_PASSWORD=\"<staging-db-password>\" /usr/local/bin/init-staging.sh'"
+     "sh -c 'PRODUCTION_DB_PASSWORD=\"<production-db-password>\" STAGING_DB_PASSWORD=\"<staging-db-password>\" /usr/local/bin/init-staging.sh'"
    ```
-   *(Create the `forum-staging` and `forum-production` buckets and per-environment access keys in the RustFS console before deploying).*
+   *(Create the `forum-staging` and `forum-production` buckets and per-bucket scoped access keys in the RustFS console before deploying).*
 
 3. **Deploy staging (`-d staging`):**
-   Export the staging build/routing variables and deploy:
+   Export the staging build/routing variables and deploy (builds and pushes `ghcr.io/sgb999/forum-laravel-inertia-vue-staging:<sha>` with staging's Vite Reverb config):
    ```bash
    export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
    export FORUM_HOST=<staging.your-domain.tld>
@@ -180,7 +182,7 @@ Deploys use [Kamal 2](https://kamal-deploy.org/) with a shared base configuratio
    - [ ] **Live chat delivery works end-to-end:** Open a chat between two signed-in users in two separate browser sessions, send a message in one browser, and confirm it appears in the second authorized browser in real time without a page refresh.
 
 5. **Deploy production (`-d production`):**
-   Once the staging checklist passes, export the production build/routing variables and deploy production:
+   Once the staging checklist passes, export the production build/routing variables and deploy production (builds and pushes `ghcr.io/sgb999/forum-laravel-inertia-vue-production:<sha>` with production's Vite Reverb config):
    ```bash
    export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
    export FORUM_HOST=<forum.your-domain.tld>
