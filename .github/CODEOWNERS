@@ -1,0 +1,5 @@
+# The repository owner reviews and approves every change.
+# With "Require review from Code Owners" on in the staging branch rule,
+# only this approval satisfies the review requirement; bot reviews do not.
+# QA verdicts are reported separately by the qa-review status check.
+* @sgb999
