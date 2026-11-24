@@ -8,6 +8,10 @@
 .kamal/secrets.*
 !.kamal/secrets.example
 !.kamal/secrets.*.example
+auth.json
+storage/*.key
+opencode.json
+docker-compose.override.yml
 vendor
 node_modules
 .pnpm-store
@@ -18,6 +22,7 @@ bootstrap/cache/*.php
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*
+storage/framework/testing/*
 storage/framework/views/*
 tests/Browser/Screenshots
 .phpunit.cache

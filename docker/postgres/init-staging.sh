@@ -44,6 +44,16 @@ if [ "$PROD_USER" = "$STAGING_USER" ]; then
     exit 1
 fi
 
+if [ "$PROD_DB" = "$ADMIN_DB" ] || [ "$STAGING_DB" = "$ADMIN_DB" ]; then
+    echo "Error: application databases ($PROD_DB, $STAGING_DB) must be distinct from POSTGRES_DB ($ADMIN_DB)." >&2
+    exit 1
+fi
+
+if [ "$PROD_DB" = "$STAGING_DB" ]; then
+    echo "Error: PRODUCTION_DB_DATABASE and STAGING_DB_DATABASE must be distinct." >&2
+    exit 1
+fi
+
 until pg_isready -U "$ADMIN_USER" -d "$ADMIN_DB" >/dev/null 2>&1; do
     sleep 1
 done

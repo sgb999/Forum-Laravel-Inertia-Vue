@@ -124,3 +124,16 @@ assert!(
     compose_raw.include?("POSTGRES_PASSWORD: ${DB_PASSWORD:?") &&
     !compose_raw.include?("DB_PASSWORD:-password")
 )
+
+assert!(
+  "init-staging.sh rejects equal or admin-colliding database names before running pg_isready or psql",
+  init_script.include?('if [ "$PROD_DB" = "$ADMIN_DB" ] || [ "$STAGING_DB" = "$ADMIN_DB" ]; then') &&
+    init_script.include?('if [ "$PROD_DB" = "$STAGING_DB" ]; then') &&
+    init_script.index('if [ "$PROD_DB" = "$STAGING_DB" ]; then') < init_script.index('pg_isready')
+)
+
+dockerignore = File.read(File.expand_path("../.dockerignore", __dir__)).lines.map(&:strip)
+assert!(
+  ".dockerignore excludes auth.json and storage/*.key",
+  dockerignore.include?("auth.json") && dockerignore.include?("storage/*.key")
+)
