@@ -11,17 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('cache', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->mediumText('value');
-            $table->bigInteger('expiration')->index();
-        });
+        // Guarded: a cutover dump restored before this migration runs (see the
+        // README cutover runbook) already brings these tables with it.
+        if (! Schema::hasTable('cache')) {
+            Schema::create('cache', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->mediumText('value');
+                $table->bigInteger('expiration')->index();
+            });
+        }
 
-        Schema::create('cache_locks', function (Blueprint $table) {
-            $table->string('key')->primary();
-            $table->string('owner');
-            $table->bigInteger('expiration')->index();
-        });
+        if (! Schema::hasTable('cache_locks')) {
+            Schema::create('cache_locks', function (Blueprint $table) {
+                $table->string('key')->primary();
+                $table->string('owner');
+                $table->bigInteger('expiration')->index();
+            });
+        }
     }
 
     /**

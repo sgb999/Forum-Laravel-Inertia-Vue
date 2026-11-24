@@ -45,7 +45,7 @@ if [ "$APP_ENV" = "production" ]; then
             ;;
         *)
             echo "[entrypoint] waiting for the web role to finish migrations..."
-            WAIT_TIMEOUT=300
+            WAIT_TIMEOUT="${MIGRATION_WAIT_TIMEOUT:-300}"
             WAITED=0
             while true; do
                 # --pending=1 exits 0 once nothing is pending, 1 while
@@ -56,9 +56,12 @@ if [ "$APP_ENV" = "production" ]; then
                     break
                 fi
                 if [ "$WAITED" -ge "$WAIT_TIMEOUT" ]; then
-                    echo "[entrypoint] gave up waiting for migrations after ${WAIT_TIMEOUT}s, starting anyway:" >&2
+                    # Fail the container instead of starting against a schema
+                    # that isn't ready, so Kamal reports this role as unhealthy
+                    # rather than silently running degraded.
+                    echo "[entrypoint] gave up waiting for migrations after ${WAIT_TIMEOUT}s, refusing to start:" >&2
                     cat /tmp/migrate-status.log >&2
-                    break
+                    exit 1
                 fi
                 sleep 2
                 WAITED=$((WAITED + 2))
