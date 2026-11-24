@@ -12,6 +12,12 @@ servers:
   worker:
     hosts:
       - <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+    # No --force: during any future maintenance window (including a schema
+    # migration not yet applied), this standing process should idle rather
+    # than process jobs against a database it can't be sure is ready. A
+    # cutover or similar one-off drain uses its own
+    # `queue:work --force --stop-when-empty` run manually (see README), not
+    # this role's cmd.
     cmd: php artisan queue:work database --tries=3 --backoff=3
   scheduler:
     hosts:
