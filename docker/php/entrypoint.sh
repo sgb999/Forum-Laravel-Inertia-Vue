@@ -3,14 +3,19 @@ set -e
 
 # Setup storage and cache directories
 mkdir -p \
-    storage/app/public \
+    storage/app/public/default \
     storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache \
     storage/logs \
     bootstrap/cache
 
-# Fix permissions
+# Sync tracked default avatars/banners into the persistent storage volume
+if [ -d /usr/local/share/forum-default ]; then
+    cp -a /usr/local/share/forum-default/. storage/app/public/default/ 2>/dev/null || true
+fi
+
+# Ensure proper permissions (ignore errors if volume mounts forbid it on host)
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
 
@@ -22,10 +27,14 @@ fi
 # Development specific initialization
 if [ "$APP_ENV" != "production" ]; then
     if [ ! -f .env ] && [ -f .env.example ]; then
+        echo "[entrypoint] Copying .env.example to .env..."
         cp .env.example .env
     fi
 
-    # Keep the `vendor` named volume in sync with composer.lock automatically
+    # Install / sync Composer dependencies whenever composer.lock changes.
+    # app, reverb, queue and scheduler all share the bind-mounted worktree, so
+    # serialize with an atomic mkdir lock inside vendor/ to avoid four containers
+    # racing `composer install` on `docker compose up`.
     if [ -f composer.json ] && [ -f composer.lock ]; then
         mkdir -p vendor
         HASH_FILE="vendor/.composer-lock.hash"

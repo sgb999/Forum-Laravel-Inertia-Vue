@@ -39,7 +39,7 @@ class RouteServiceProvider extends ServiceProvider
         $this->configureRateLimiting();
 
         $this->routes(function () {
-            Route::get('/up', HealthCheck::class)->name('health');
+            Route::get('/up', HealthCheck::class);
 
             Route::prefix('api')
                 ->middleware('api')
