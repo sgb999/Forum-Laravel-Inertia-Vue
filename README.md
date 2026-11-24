@@ -102,12 +102,14 @@ With the default `log` broadcast driver, messages are still stored and displayed
 
 The frontend (`resources/js/echo.ts`) also needs `VITE_REVERB_APP_KEY`, `VITE_REVERB_HOST`, `VITE_REVERB_PORT` and `VITE_REVERB_SCHEME`, which Vite inlines into the built JS at compile time rather than reading at runtime. In local dev, `pnpm run dev` reads these from `.env` like any other Vite env var. In the production image, they're passed as Docker build args from the same values as `REVERB_APP_KEY`/`HOST`/`PORT`/`SCHEME` (see `builder.args` in `config/deploy.yml`) - the app key is public by design, but `REVERB_APP_SECRET` must never be passed as a build arg.
 
+`builder.args` is ERB evaluated by the `kamal` CLI against the shell environment of whoever runs it - it does **not** read `.kamal/secrets`. Before running `kamal build` or `kamal deploy`, export `REVERB_APP_KEY`, `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` in that shell (e.g. `set -a; source .env.production; set +a`). `REVERB_APP_KEY` and `REVERB_HOST` have no fallback and will raise `KeyError` (failing the build) if left unset, rather than silently baking in an empty value; `REVERB_PORT` and `REVERB_SCHEME` default to `443`/`https` if omitted.
+
 ### Deploying with Kamal 2
 
 Production deploys use [Kamal 2](https://kamal-deploy.org/) with the self-contained `production` stage in `docker/php/Dockerfile` (Nginx + PHP-FPM under Supervisord on port 80, healthcheck at `/up`, plus `worker`, `scheduler` and `reverb` roles). On container startup in production (`APP_ENV=production`), `docker/php/entrypoint.sh` automatically runs `php artisan migrate --force` before starting Supervisord or the role command, so schema migrations succeed before web traffic or queue workers start.
 
 1. Copy `.kamal/secrets.example` to `.kamal/secrets` (gitignored and excluded by `.dockerignore`) and configure your registry token, `APP_KEY`, `APP_URL`, database credentials and Reverb / S3 settings.
-2. Set the target host (`export KAMAL_DEPLOY_HOST=<server-ip>`) or update `config/deploy.yml`.
+2. Set the target host (`export KAMAL_DEPLOY_HOST=<server-ip>`) or update `config/deploy.yml`. Also export `REVERB_APP_KEY`, `REVERB_HOST`, `REVERB_PORT` and `REVERB_SCHEME` in the same shell (e.g. `set -a; source .env.production; set +a`) - `builder.args` reads these directly from the shell environment, not from `.kamal/secrets`, and `kamal build`/`kamal deploy` will fail fast if `REVERB_APP_KEY` or `REVERB_HOST` is missing.
 3. Bootstrap accessories and deploy on first run: `kamal setup` (starts PostgreSQL 18 and RustFS accessories, runs database migrations via the production entrypoint, and starts `web`, `worker`, `scheduler` and `reverb`).
 4. (Optional) Seed initial forum categories on a fresh database: `kamal app exec -p "php artisan db:seed --force"`.
 5. Deploy subsequent releases: `kamal deploy`
