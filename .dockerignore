@@ -1,0 +1,24 @@
+# Keep local state and secrets out of image builds.
+.git
+.env
+.env.*
+!.env.example
+.kamal/secrets
+.kamal/secrets.*
+!.kamal/secrets.example
+vendor
+node_modules
+.pnpm-store
+public/build
+public/hot
+public/storage
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+tests/Browser/Screenshots
+.phpunit.cache
+.phpunit.result.cache
+.idea
+.vscode

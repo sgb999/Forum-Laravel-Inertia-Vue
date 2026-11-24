@@ -10,6 +10,8 @@ x-app-image: &app-image laravel-app:dev
 x-app-env: &app-env
     env_file:
         - .env
+    environment:
+        DB_HOST: ${COMPOSE_DB_HOST:-postgres}
 
 services:
     app:
@@ -53,13 +55,17 @@ services:
         networks: [laravel]
 
     # Pest browser tests. Debian-based because Playwright's Chromium has no
-    # musl build; host networking lets Chromium reach the Vite dev server.
+    # musl build; host networking lets Chromium reach the Vite dev server,
+    # so Postgres is reached through its forwarded port on the host.
     browser:
         build:
             context: .
             dockerfile: docker/php/Dockerfile
             target: browser
         <<: *app-env
+        environment:
+            DB_HOST: 127.0.0.1
+            DB_PORT: ${FORWARD_DB_PORT:-5432}
         network_mode: host
         user: "${BROWSER_UID:-1000}:${BROWSER_GID:-1000}"
         working_dir: /var/www/html

@@ -8,6 +8,7 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     apk update && \
+    apk upgrade && \
     apk add \
         bash \
         curl \
@@ -20,9 +21,11 @@ RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     && ln -snf /usr/share/zoneinfo/UTC /etc/localtime \
     && echo "UTC" > /etc/timezone
 
-RUN composer install --no-dev --no-interaction --prefer-dist --no-autoloader --no-scripts
+# The composer image has no exif/gd (spatie/laravel-medialibrary needs it). The production image does,
+# so skip platform checks here and run package discovery in the production stage instead.
+RUN composer install --no-dev --no-interaction --prefer-dist --no-autoloader --no-scripts --ignore-platform-reqs
 COPY . .
-RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scripts
 
 ##############################################
 # Stage 2: Frontend build (Vite / Inertia CSR)
@@ -30,7 +33,7 @@ RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
 FROM node:22-alpine AS frontend
 WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 COPY . .
@@ -117,6 +120,8 @@ COPY docker/php/opcache-prod.ini /usr/local/etc/php/conf.d/99-z-opcache-prod.ini
 COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
+
+RUN php artisan package:discover --ansi
 
 RUN mkdir -p /usr/local/share/forum-default \
     && cp -a /var/www/html/storage/app/public/default/. /usr/local/share/forum-default/ \

@@ -24,6 +24,11 @@ if [ ! -e public/storage ] && [ ! -L public/storage ]; then
     ln -s ../storage/app/public public/storage 2>/dev/null || true
 fi
 
+# Production initialization: run pending migrations before traffic or workers start
+if [ "$APP_ENV" = "production" ]; then
+    php artisan migrate --force
+fi
+
 # Development specific initialization
 if [ "$APP_ENV" != "production" ]; then
     if [ ! -f .env ] && [ -f .env.example ]; then
