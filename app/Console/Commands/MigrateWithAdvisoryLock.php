@@ -26,6 +26,8 @@ class MigrateWithAdvisoryLock extends Command
      */
     private const LOCK_KEY = 8743201;
 
+    private const POLL_INTERVAL_SECONDS = 2;
+
     public function handle(): int
     {
         $connection = DB::connection();
@@ -35,15 +37,25 @@ class MigrateWithAdvisoryLock extends Command
             return $this->call('migrate', ['--force' => true]);
         }
 
-        $acquired = $connection->selectOne('select pg_try_advisory_lock(?) as locked', [self::LOCK_KEY])->locked;
+        $timeoutSeconds = max(1, (int) env('MIGRATION_LOCK_TIMEOUT', 300));
+        $waited = 0;
 
-        if (! $acquired) {
-            $this->components->warn('Another process already holds the migration lock; skipping.');
+        while (! $connection->selectOne('select pg_try_advisory_lock(?) as locked', [self::LOCK_KEY])->locked) {
+            if ($waited >= $timeoutSeconds) {
+                $this->components->error("Timed out after {$timeoutSeconds}s waiting for another process to release the migration lock.");
 
-            return self::SUCCESS;
+                return self::FAILURE;
+            }
+
+            $this->components->warn('Another process holds the migration lock; waiting...');
+            sleep(self::POLL_INTERVAL_SECONDS);
+            $waited += self::POLL_INTERVAL_SECONDS;
         }
 
         try {
+            // Always migrate once we hold the lock: a no-op if the container
+            // that finished first already applied everything, and it does
+            // the work if that container died before finishing.
             return $this->call('migrate', ['--force' => true]);
         } finally {
             $connection->selectOne('select pg_advisory_unlock(?)', [self::LOCK_KEY]);

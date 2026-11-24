@@ -39,8 +39,11 @@ if [ "$APP_ENV" = "production" ]; then
             # supposed to guard. `migrate:owned` (app/Console/Commands) takes a
             # Postgres session advisory lock instead, which needs no table, so
             # it also works on a completely empty database. An overlapping web
-            # container from a rolling deploy that can't get the lock just
-            # skips, trusting the container holding it to finish the migration.
+            # container from a rolling deploy blocks on the lock instead of
+            # skipping, then runs migrate --force itself once it gets it (a
+            # no-op if the first container already finished, or a retry if
+            # that container died mid-migration), and fails non-zero if the
+            # lock never frees within the timeout.
             php artisan migrate:owned
             ;;
         *)

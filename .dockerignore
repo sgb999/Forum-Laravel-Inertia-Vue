@@ -22,3 +22,10 @@ tests/Browser/Screenshots
 .phpunit.result.cache
 .idea
 .vscode
+
+# Cutover dumps must live outside the repo (see the README cutover runbook),
+# but guard against one landing here anyway so it never reaches the image.
+*.dump
+*.sql
+*.sql.gz
+*.backup
