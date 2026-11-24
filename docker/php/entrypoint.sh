@@ -24,9 +24,47 @@ if [ ! -e public/storage ] && [ ! -L public/storage ]; then
     ln -s ../storage/app/public public/storage 2>/dev/null || true
 fi
 
-# Production initialization: run pending migrations before traffic or workers start
+# Production initialization: apply migrations exactly once before any role
+# starts, instead of every role racing `migrate --force` against the same
+# database. Kamal's web role runs the image's default CMD (supervisord);
+# worker, scheduler and reverb override "$@" with their own `php artisan ...`
+# command (see config/deploy.yml). Use that to make web the sole migration
+# owner, and have every other role wait for it to finish first.
 if [ "$APP_ENV" = "production" ]; then
-    php artisan migrate --force
+    case "$1" in
+        *supervisord*)
+            # `migrate --isolated` was tried here first, but its mutex is backed
+            # by the `cache_locks` table - which doesn't exist yet on a brand
+            # new database, since it's itself created by the migration this is
+            # supposed to guard. `migrate:owned` (app/Console/Commands) takes a
+            # Postgres session advisory lock instead, which needs no table, so
+            # it also works on a completely empty database. An overlapping web
+            # container from a rolling deploy that can't get the lock just
+            # skips, trusting the container holding it to finish the migration.
+            php artisan migrate:owned
+            ;;
+        *)
+            echo "[entrypoint] waiting for the web role to finish migrations..."
+            WAIT_TIMEOUT=300
+            WAITED=0
+            while true; do
+                # --pending=1 exits 0 once nothing is pending, 1 while
+                # migrations are pending OR the migrations table doesn't
+                # exist yet (first boot) - both mean "web isn't done yet".
+                if php artisan migrate:status --pending=1 >/tmp/migrate-status.log 2>&1; then
+                    echo "[entrypoint] migrations are up to date, starting."
+                    break
+                fi
+                if [ "$WAITED" -ge "$WAIT_TIMEOUT" ]; then
+                    echo "[entrypoint] gave up waiting for migrations after ${WAIT_TIMEOUT}s, starting anyway:" >&2
+                    cat /tmp/migrate-status.log >&2
+                    break
+                fi
+                sleep 2
+                WAITED=$((WAITED + 2))
+            done
+            ;;
+    esac
 fi
 
 # Development specific initialization

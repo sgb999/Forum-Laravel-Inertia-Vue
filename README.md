@@ -110,28 +110,52 @@ Production deploys use [Kamal 2](https://kamal-deploy.org/) with the self-contai
 4. (Optional) Seed initial forum categories on a fresh database: `kamal app exec -p "php artisan db:seed --force"`.
 5. Deploy subsequent releases: `kamal deploy`
 
-### MySQL to PostgreSQL 18 Cutover Runbook
+### Cloud PostgreSQL to PostgreSQL 18 (Kamal) Cutover Runbook
 
-Switching from the previous MySQL + Valkey stack to PostgreSQL 18 starts a new `forum-postgres` volume; Laravel migrations create the schema (including `cache`, `sessions` and `jobs`) but do not copy existing rows. For an installation with existing MySQL data, follow this cutover procedure:
+Live data currently lives in a cloud-hosted PostgreSQL instance (not on Kamal); there is no MySQL data anywhere in this stack. Moving it to the self-hosted PostgreSQL 18 accessory is a same-engine Postgres → Postgres migration, so `pg_dump`/`pg_restore` carries over the schema, data **and** sequence positions in one step. The production queue uses the `database` driver (`QUEUE_CONNECTION=database` in `config/deploy.yml`), not Redis/Valkey — there is no separate queue store to cut over, just the `jobs` table that comes along in the dump. Follow this procedure:
 
-1. **Write cutoff & queue drain:**
-   - Put the running MySQL application into maintenance mode (`php artisan down`) to establish the write cutoff and recovery point.
-   - Let the Valkey/Redis queue worker drain in-flight jobs until `redis-cli llen queues:default` is `0`, then stop the old `worker` and `scheduler` containers.
-2. **Backup MySQL (recovery point):**
-   - Take a full logical dump of the MySQL database before changing anything:
-     `mysqldump --single-transaction --routines --triggers -u laravel -p laravel > forum-mysql-pre-cutover.sql`
-   - Record source row counts across all application tables (`users`, `categories`, `posts`, `comments`, `chats`, `messages`, `media`, `temporary_files`, `replies`, `personal_access_tokens`).
-3. **Bootstrap PostgreSQL 18 & import data:**
-   - Start the PostgreSQL 18 accessory (`kamal accessory boot postgres`) and allow one production container boot (or `php artisan migrate --force`) to create the PostgreSQL schema.
-   - Copy application data from MySQL into the existing PostgreSQL schema (for example with `pgloader --with "data only" --with "reset sequences" mysql://laravel:***@127.0.0.1:3306/laravel pgsql://laravel:***@127.0.0.1:5432/laravel`, or CSV export + `\\copy` in foreign-key order: `users`, `categories`, `posts`, `comments`, `chats`, `messages`, `media`, `temporary_files`, `replies`, `personal_access_tokens`).
-4. **Verify row counts & primary-key sequences:**
-   - Confirm exact row-count parity between MySQL and PostgreSQL for every table:
-     `SELECT table_name, (xpath('/row/cnt/text()', query_to_xml(format('SELECT count(*) AS cnt FROM %I', table_name), false, true, '')))[1]::text::bigint AS row_count FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;`
-   - Reset and verify every `BIGSERIAL` sequence so the next inserted ID exceeds `MAX(id)` and cannot collide:
-     `SELECT setval(pg_get_serial_sequence(t, 'id'), COALESCE((SELECT MAX(id) FROM public.users), 1), true) FROM (VALUES ('public.users'), ('public.categories'), ('public.posts'), ('public.comments'), ('public.chats'), ('public.messages'), ('public.media'), ('public.temporary_files'), ('public.replies'), ('public.personal_access_tokens'), ('public.failed_jobs'), ('public.jobs')) AS v(t);` (run `setval(pg_get_serial_sequence(t, 'id'), GREATEST(COALESCE(MAX(id), 0), 1), MAX(id) IS NOT NULL)` per table and verify `pg_sequences.last_value >= MAX(id)`).
-5. **Switch traffic:**
-   - Deploy the PostgreSQL release (`kamal deploy`), verify `GET /up` returns `200`, sign in, and confirm a queued job is consumed from the `jobs` table.
+1. **Stop producers, then drain the queue (write cutoff):**
+   - Put the cloud-hosted application into maintenance mode (`php artisan down`) — this is the write cutoff and blocks new HTTP-triggered job dispatches.
+   - Stop the `scheduler` role (`kamal app stop --roles=scheduler`) so no more cron-dispatched jobs get enqueued.
+   - Leave the `worker` role running and wait for the `jobs` table to empty — with the `database` driver, ready, reserved **and** delayed jobs are all rows in that one table, so a single count covers all three states:
+     `SELECT count(*) FROM jobs;` — repeat until it returns `0` (allow for `retry_after = 90` seconds on any job the worker had reserved when producers stopped). Check `failed_jobs` too; anything there has already exhausted its retries and won't block the drain, but triage it before cutover.
+   - Only once `jobs` is empty, stop the `worker` role (`kamal app stop --roles=worker`).
+2. **Backup the cloud PostgreSQL database (recovery point):**
+   - With the app quiesced (no process can write anymore), take a full custom-format dump: `pg_dump -Fc -h <cloud-host> -U laravel -d laravel -f forum-pre-cutover.dump`. Custom format carries the schema, data and current sequence values together.
+   - Record source row counts per table for the verification step below: `SELECT relname, n_live_tup FROM pg_stat_user_tables ORDER BY relname;` (or `SELECT count(*) FROM <table>` per table if `n_live_tup` hasn't settled since the dump).
+3. **Bootstrap PostgreSQL 18 & restore:**
+   - Start the accessory on an empty volume: `kamal accessory boot postgres`.
+   - Restore the full dump directly, **before running `php artisan migrate`**: `pg_restore --no-owner --no-privileges -h <kamal-host> -U laravel -d laravel forum-pre-cutover.dump`.
+   - Why restore-first instead of migrate-then-data-only: the dump already matches exactly what the running app considers its current schema (including the `migrations` table), so restoring it first guarantees schema parity with no drift, and `pg_restore` sets every sequence to its dumped `last_value` automatically — no manual sequence reset is needed for the rows that came from the dump. The first production boot after this (see "Migrations" below) then only has to apply migrations that landed in this PR but hadn't been run against the cloud database yet (for example the `jobs`/`cache` tables added here), which is exactly what a normal `migrate --force` is for.
+4. **Verify row counts & sequences:**
+   - Compare counts against the source recorded in step 2.
+   - Confirm every sequence is still ahead of its table's own max `id` (defensive check — `pg_restore` should already guarantee this, but migrations applied in step 3 can add new sequences that only exist with their default starting value):
+     ```sql
+     DO $$
+     DECLARE
+         tbl text;
+         seq text;
+         max_id bigint;
+     BEGIN
+         FOREACH tbl IN ARRAY ARRAY['public.users', 'public.categories', 'public.posts', 'public.comments', 'public.chats', 'public.messages', 'public.media', 'public.temporary_files', 'public.replies', 'public.personal_access_tokens', 'public.failed_jobs', 'public.jobs']
+         LOOP
+             seq := pg_get_serial_sequence(tbl, 'id');
+             IF seq IS NOT NULL THEN
+                 EXECUTE format('SELECT COALESCE(MAX(id), 0) FROM %s', tbl) INTO max_id;
+                 IF max_id = 0 THEN
+                     PERFORM setval(seq, 1, false);
+                 ELSE
+                     PERFORM setval(seq, max_id, true);
+                 END IF;
+             END IF;
+         END LOOP;
+     END $$;
+     ```
+     This reads each table's **own** max `id` (the previous one-liner reused `MAX(id) FROM public.users` for every table, so any table whose max differed from `users` — e.g. `posts` — got its sequence reset to the wrong value and collided on the next insert) and is empty-table-safe (`setval(seq, 1, false)` makes the next value `1` instead of skipping it).
+5. **Migrations & switch traffic:**
+   - Deploy (`kamal deploy`). The production entrypoint gives the `web` role sole ownership of `migrate --force` and makes `worker`/`scheduler`/`reverb` wait for it before starting (see `docker/php/entrypoint.sh`), so this is safe to run with all four roles booting together.
+   - Verify `GET /up` returns `200`, sign in, confirm the session persists across a request, and dispatch and consume a job to confirm the queue is live against the new database.
 6. **Rollback limits:**
-   - Keep the old MySQL volume and `forum-mysql-pre-cutover.sql` untouched until the cutover is signed off.
-   - Before traffic is re-enabled on PostgreSQL, rollback is zero-loss by redeploying the previous image against the frozen MySQL volume.
-   - **Once live write traffic hits PostgreSQL, rolling back the application container alone will not recover posts, comments, messages, or accounts written to PostgreSQL after the cutoff**; reverting after live traffic requires either accepting the pre-cutover MySQL snapshot as the recovery point (losing post-cutover writes) or exporting new PostgreSQL rows back to MySQL during another maintenance window.
+   - Keep the cloud PostgreSQL instance untouched (read-only, no traffic) until the cutover is signed off.
+   - Before traffic is re-enabled against the new PostgreSQL 18 accessory, rollback is zero-loss: point the previous release back at the cloud PostgreSQL instance, which never received writes during the cutover window.
+   - **Once live write traffic hits the new PostgreSQL 18 accessory, rolling back the application alone will not recover anything written there after the cutoff** — new accounts, posts, comments, messages and queued jobs. Reverting after that point means either accepting the pre-cutover dump as the recovery point (losing those writes) or exporting the new rows back to the cloud database during another maintenance window.
