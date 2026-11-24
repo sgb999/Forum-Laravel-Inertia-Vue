@@ -5,6 +5,12 @@
 # superuser, default `forum_admin`), and revokes cross-environment `CONNECT`
 # privileges so neither runtime application role has superuser privileges or
 # access to the other environment's database.
+#
+# PRODUCTION_DB_PASSWORD and STAGING_DB_PASSWORD are read from the container
+# environment (injected via the accessory's `env.secret` in
+# `config/deploy.production.yml` from `.kamal/secrets.production`) and consumed
+# inside PostgreSQL via `getenv(...)` so neither password ever appears on a
+# command line, in `ps` process arguments, or in Kamal's host audit log.
 set -eu
 
 ADMIN_USER="${POSTGRES_USER:-forum_admin}"
@@ -42,15 +48,19 @@ until pg_isready -U "$ADMIN_USER" -d "$ADMIN_DB" >/dev/null 2>&1; do
     sleep 1
 done
 
+export PRODUCTION_DB_PASSWORD="$PROD_PASSWORD"
+export STAGING_DB_PASSWORD="$STAGING_PASSWORD"
+
 psql -v ON_ERROR_STOP=1 \
     --username "$ADMIN_USER" \
     --dbname "$ADMIN_DB" \
     --set=prod_user="$PROD_USER" \
     --set=prod_db="$PROD_DB" \
-    --set=prod_password="$PROD_PASSWORD" \
     --set=staging_user="$STAGING_USER" \
-    --set=staging_db="$STAGING_DB" \
-    --set=staging_password="$STAGING_PASSWORD" <<'EOSQL'
+    --set=staging_db="$STAGING_DB" <<'EOSQL'
+\getenv prod_password PRODUCTION_DB_PASSWORD
+\getenv staging_password STAGING_DB_PASSWORD
+
 SELECT format('CREATE ROLE %I LOGIN PASSWORD %L NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS', :'prod_user', :'prod_password')
 WHERE NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = :'prod_user') \gexec
 

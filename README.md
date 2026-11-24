@@ -76,7 +76,7 @@ The **login** page and the real-time **chats / messages** pages follow the same 
 
 ## How to Run the Project
 
-1. Copy `.env.example` to `.env`, run `php artisan key:generate`, and configure your database credentials and `APP_URL` (important — uploaded images are served through full URLs).
+1. Copy `.env.example` to `.env`, run `php artisan key:generate`, set a non-empty `DB_PASSWORD` (required by `docker-compose.yml`, which binds PostgreSQL 18 to `127.0.0.1:${FORWARD_DB_PORT:-5432}:5432` with no default password), and configure your database credentials and `APP_URL` (important — uploaded images are served through full URLs).
 2. Install PHP dependencies: `composer install`
 3. Install JS dependencies (the project uses pnpm): `pnpm install`
 4. Run migrations and seeders: `php artisan migrate --seed`
@@ -140,19 +140,18 @@ Deploys use [Kamal 2](https://kamal-deploy.org/) with a shared base configuratio
    Supply your real values for:
    - **Host & proxy ports (shell env):** `KAMAL_DEPLOY_HOST`, and optionally `KAMAL_PROXY_HTTP_PORT` (default `8080`) and `KAMAL_PROXY_HTTPS_PORT` (default `8443`).
    - **Per-destination shell env (exported before each build/deploy):** `FORUM_HOST`, `REVERB_HOST`, `REVERB_APP_KEY`, `REVERB_PORT` (default `443`), and `REVERB_SCHEME` (default `https`).
-   - **Accessory admin secrets (`.kamal/secrets.production` only):** `POSTGRES_PASSWORD` (for the `POSTGRES_USER=forum_admin` PostgreSQL superuser; must be distinct from `DB_PASSWORD`), `RUSTFS_ACCESS_KEY`, and `RUSTFS_SECRET_KEY` (for the `forum-rustfs` accessory admin; must be distinct from the app's bucket-scoped `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
+   - **Accessory admin & bootstrap secrets (`.kamal/secrets.production` only):** `POSTGRES_PASSWORD` (for the `POSTGRES_USER=forum_admin` PostgreSQL superuser; must be distinct from `DB_PASSWORD`), `PRODUCTION_DB_PASSWORD`, and `STAGING_DB_PASSWORD` (injected into the `forum-postgres` accessory container via `accessories.postgres.env.secret` so `/usr/local/bin/init-staging.sh` reads them from the container environment rather than the `kamal accessory exec` command line), plus `RUSTFS_ACCESS_KEY` and `RUSTFS_SECRET_KEY` (for the `forum-rustfs` accessory admin; must be distinct from the app's bucket-scoped `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY`).
    - **Per-destination app secrets (distinct values in `.kamal/secrets.staging` vs `.kamal/secrets.production`):** `KAMAL_REGISTRY_PASSWORD`, `APP_KEY`, `APP_URL`, `DB_PASSWORD` (for the non-superuser `forum_staging` and `forum_production` roles), `REVERB_APP_ID`, `REVERB_APP_KEY`, `REVERB_APP_SECRET`, `REVERB_HOST`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` (scoped to each destination's own bucket), `AWS_BUCKET` (`forum-staging` vs `forum-production`), and `AWS_ENDPOINT` (default `http://forum-rustfs:9000`).
 
 2. **Bootstrap the shared PostgreSQL 18 & RustFS accessories and initialize both non-superuser roles/DBs:**
-   Boot the accessories (owned by the `production` destination) and run the mounted idempotent init script (`docker/postgres/init-staging.sh`), which waits for `pg_isready` as `forum_admin` and creates/updates the non-superuser `forum_production` and `forum_staging` login roles and databases while revoking cross-environment `CONNECT` privileges:
+   Boot the accessories (owned by the `production` destination) and run the mounted idempotent init script (`docker/postgres/init-staging.sh`). The script reads `PRODUCTION_DB_PASSWORD` and `STAGING_DB_PASSWORD` directly from the accessory container environment (populated from `.kamal/secrets.production` via `accessories.postgres.env.secret` and read inside `psql` via `\getenv`) so neither password ever appears on a command line or in Kamal's host audit log:
    ```bash
    export KAMAL_DEPLOY_HOST=<unraid-lan-ip>
    export REVERB_APP_KEY=<production-reverb-app-key>
    export REVERB_HOST=<reverb.your-domain.tld>
 
    kamal accessory boot all -d production
-   kamal accessory exec postgres -d production --reuse \
-     "sh -c 'PRODUCTION_DB_PASSWORD=\"<production-db-password>\" STAGING_DB_PASSWORD=\"<staging-db-password>\" /usr/local/bin/init-staging.sh'"
+   kamal accessory exec postgres -d production --reuse "/usr/local/bin/init-staging.sh"
    ```
    *(Create the `forum-staging` and `forum-production` buckets and per-bucket scoped access keys in the RustFS console before deploying).*
 

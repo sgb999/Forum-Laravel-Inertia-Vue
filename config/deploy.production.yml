@@ -29,6 +29,8 @@ accessories:
         POSTGRES_USER: forum_admin
       secret:
         - POSTGRES_PASSWORD
+        - PRODUCTION_DB_PASSWORD
+        - STAGING_DB_PASSWORD
     files:
       - docker/postgres/init-staging.sh:/usr/local/bin/init-staging.sh
     directories:

@@ -95,3 +95,32 @@ assert!(
   "secrets.production.example does not fall back to RUSTFS_ACCESS_KEY or RUSTFS_SECRET_KEY for app AWS keys",
   !prod_secrets.include?("RUSTFS_ACCESS_KEY}") && !prod_secrets.include?("RUSTFS_SECRET_KEY}")
 )
+
+pg_secret_env = Array(production.dig("accessories", "postgres", "env", "secret"))
+assert!(
+  "postgres accessory injects PRODUCTION_DB_PASSWORD and STAGING_DB_PASSWORD via env.secret",
+  pg_secret_env.include?("PRODUCTION_DB_PASSWORD") && pg_secret_env.include?("STAGING_DB_PASSWORD")
+)
+
+init_script = File.read(File.expand_path("../docker/postgres/init-staging.sh", __dir__))
+assert!(
+  "init-staging.sh reads role passwords inside psql via \\getenv without passing them on the psql command line",
+  init_script.include?('\\getenv prod_password PRODUCTION_DB_PASSWORD') &&
+    init_script.include?('\\getenv staging_password STAGING_DB_PASSWORD') &&
+    !init_script.include?("--set=prod_password=") &&
+    !init_script.include?("--set=staging_password=")
+)
+
+readme = File.read(File.expand_path("../README.md", __dir__))
+assert!(
+  "README bootstrap command does not pass PRODUCTION_DB_PASSWORD or STAGING_DB_PASSWORD on a command line",
+  !readme.match?(/PRODUCTION_DB_PASSWORD\s*=/) && !readme.match?(/STAGING_DB_PASSWORD\s*=/)
+)
+
+compose_raw = File.read(File.expand_path("../docker-compose.yml", __dir__))
+assert!(
+  "docker-compose.yml binds postgres port to 127.0.0.1 and requires DB_PASSWORD without a predictable default",
+  compose_raw.include?('"127.0.0.1:${FORWARD_DB_PORT:-5432}:5432"') &&
+    compose_raw.include?("POSTGRES_PASSWORD: ${DB_PASSWORD:?") &&
+    !compose_raw.include?("DB_PASSWORD:-password")
+)
