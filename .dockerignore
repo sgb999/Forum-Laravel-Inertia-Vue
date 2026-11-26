@@ -1,0 +1,38 @@
+# Keep local state and secrets out of image builds.
+.git
+.env
+.env.*
+!.env.example
+.kamal/secrets
+.kamal/secrets-common
+.kamal/secrets.*
+!.kamal/secrets.example
+!.kamal/secrets.*.example
+auth.json
+storage/*.key
+opencode.json
+docker-compose.override.yml
+vendor
+node_modules
+.pnpm-store
+public/build
+public/hot
+public/storage
+bootstrap/cache/*.php
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/testing/*
+storage/framework/views/*
+tests/Browser/Screenshots
+.phpunit.cache
+.phpunit.result.cache
+.idea
+.vscode
+
+# Cutover dumps must live outside the repo (see the README cutover runbook),
+# but guard against one landing here anyway so it never reaches the image.
+*.dump
+*.sql
+*.sql.gz
+*.backup

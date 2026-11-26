@@ -1,0 +1,19 @@
+# Staging destination overrides (`kamal <cmd> -d staging`).
+# Shares the production-owned `forum-postgres` accessory container on the
+# `kamal` Docker network, using its own non-superuser `forum_staging` role and
+# `forum_staging` database (created by `docker/postgres/init-staging.sh`).
+# Traffic reaches `web` and `reverb` exclusively through the shared `kamal-proxy`
+# container routed by Host (`proxy.host` and `servers.reverb.proxy.host`).
+service: forum-staging
+image: sgb999/forum-laravel-inertia-vue-staging
+
+proxy:
+  host: <%= ENV.fetch("FORUM_HOST", "staging.forum.example.com") %>
+
+env:
+  clear:
+    DB_DATABASE: forum_staging
+    DB_USERNAME: forum_staging
+
+volumes:
+  - "forum_staging_storage:/var/www/html/storage"

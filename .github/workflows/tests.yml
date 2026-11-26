@@ -18,6 +18,9 @@ jobs:
     steps:
       - uses: actions/checkout@v7
 
+      - name: Validate Kamal deploy config env lookup
+        run: ruby .kamal/validate_env.rb
+
       - name: Set up PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -43,6 +46,55 @@ jobs:
 
       - name: Run tests
         run: php ./vendor/bin/pest --compact --testsuite=Unit,Feature
+
+  postgres-lock:
+    runs-on: ubuntu-latest
+    env:
+      APP_KEY: base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: forum_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, pdo_pgsql, gd, sockets, pcntl
+          coverage: none
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: vendor/
+          key: composer-${{ runner.os }}-${{ hashFiles('composer.lock') }}
+          restore-keys: |
+            composer-${{ runner.os }}-
+
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Prepare environment
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+
+      - name: Run migrate:owned advisory lock test on PostgreSQL
+        run: php ./vendor/bin/pest --compact --configuration=phpunit.postgres-ci.xml tests/Feature/MigrateWithAdvisoryLockTest.php
 
   browser:
     runs-on: ubuntu-latest

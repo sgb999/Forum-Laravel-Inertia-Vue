@@ -8,6 +8,7 @@ WORKDIR /app
 COPY composer.json composer.lock ./
 RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
     apk update && \
+    apk upgrade && \
     apk add \
         bash \
         curl \
@@ -16,21 +17,33 @@ RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
         tzdata \
         libpng \
         libzip \
-        mysql-client \
+        postgresql-client \
     && ln -snf /usr/share/zoneinfo/UTC /etc/localtime \
     && echo "UTC" > /etc/timezone
 
-RUN composer install --no-dev --no-interaction --prefer-dist --no-autoloader --no-scripts
+# The composer image has no exif/gd (spatie/laravel-medialibrary needs it). The production image does,
+# so skip platform checks here and run package discovery in the production stage instead.
+RUN composer install --no-dev --no-interaction --prefer-dist --no-autoloader --no-scripts --ignore-platform-reqs
 COPY . .
-RUN composer dump-autoload --optimize --classmap-authoritative --no-dev
+RUN composer dump-autoload --optimize --classmap-authoritative --no-dev --no-scripts
 
 ##############################################
 # Stage 2: Frontend build (Vite / Inertia CSR)
 ##############################################
 FROM node:22-alpine AS frontend
 WORKDIR /app
+# Vite inlines these into the built JS at compile time (see resources/js/echo.ts).
+# Only public Reverb connection details - never pass REVERB_APP_SECRET here.
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
+ENV VITE_REVERB_APP_KEY=${VITE_REVERB_APP_KEY} \
+    VITE_REVERB_HOST=${VITE_REVERB_HOST} \
+    VITE_REVERB_PORT=${VITE_REVERB_PORT} \
+    VITE_REVERB_SCHEME=${VITE_REVERB_SCHEME}
 RUN corepack enable && corepack prepare pnpm@12.16.1 --activate
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 RUN --mount=type=cache,target=/root/.local/share/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 COPY . .
@@ -58,7 +71,7 @@ RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
         tzdata \
         libpng \
         libzip \
-        mysql-client \
+        postgresql-client \
     && ln -snf /usr/share/zoneinfo/UTC /etc/localtime \
     && echo "UTC" > /etc/timezone
 
@@ -66,9 +79,7 @@ RUN --mount=type=cache,target=/var/cache/apk,sharing=locked \
 COPY --from=mlocati/php-extension-installer:2 /usr/bin/install-php-extensions /usr/local/bin/
 RUN chmod +x /usr/local/bin/install-php-extensions && \
     install-php-extensions \
-        pdo_mysql \
         pdo_pgsql \
-        mysqli \
         mbstring \
         exif \
         pcntl \
@@ -78,7 +89,6 @@ RUN chmod +x /usr/local/bin/install-php-extensions && \
         intl \
         zip \
         opcache \
-        redis \
         sockets
 
 WORKDIR /var/www/html
@@ -97,8 +107,6 @@ CMD ["php-fpm"]
 FROM base AS development
 
 ENV APP_ENV=local
-
-COPY docker/php/my.cnf.dev /etc/my.cnf.d/client.cnf
 
 RUN install-php-extensions xdebug pcov
 COPY docker/php/xdebug.ini /usr/local/etc/php/conf.d/99-xdebug.ini
@@ -123,7 +131,11 @@ COPY . .
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=frontend /app/public/build ./public/build
 
-RUN chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
+RUN php artisan package:discover --ansi
+
+RUN mkdir -p /usr/local/share/forum-default \
+    && cp -a /var/www/html/storage/app/public/default/. /usr/local/share/forum-default/ \
+    && chown -R www-data:www-data /var/www/html/storage /var/www/html/bootstrap/cache \
     && chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
 
 EXPOSE 80 8080
@@ -142,7 +154,7 @@ RUN apt-get update \
     && apt-get install -y --no-install-recommends nodejs npm \
     && rm -rf /var/lib/apt/lists/* \
     && chmod +x /usr/local/bin/install-php-extensions \
-    && install-php-extensions pdo_sqlite mbstring sockets pcntl gd
+    && install-php-extensions pdo_sqlite pdo_pgsql mbstring sockets pcntl gd
 
 RUN npm install -g playwright@1.64.1 \
     && PLAYWRIGHT_BROWSERS_PATH=/ms-playwright playwright install --with-deps chromium \

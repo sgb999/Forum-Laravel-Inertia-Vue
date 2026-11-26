@@ -10,6 +10,8 @@ x-app-image: &app-image laravel-app:dev
 x-app-env: &app-env
     env_file:
         - .env
+    environment:
+        DB_HOST: ${COMPOSE_DB_HOST:-postgres}
 
 services:
     app:
@@ -20,10 +22,8 @@ services:
             - .:/var/www/html
         command: php-fpm
         depends_on:
-            mysql:
+            postgres:
                 condition: service_healthy
-            valkey:
-                condition: service_started
         networks: [laravel]
 
     nginx:
@@ -55,13 +55,17 @@ services:
         networks: [laravel]
 
     # Pest browser tests. Debian-based because Playwright's Chromium has no
-    # musl build; host networking lets Chromium reach the Vite dev server.
+    # musl build; host networking lets Chromium reach the Vite dev server,
+    # so Postgres is reached through its forwarded port on the host.
     browser:
         build:
             context: .
             dockerfile: docker/php/Dockerfile
             target: browser
         <<: *app-env
+        environment:
+            DB_HOST: 127.0.0.1
+            DB_PORT: ${FORWARD_DB_PORT:-5432}
         network_mode: host
         user: "${BROWSER_UID:-1000}:${BROWSER_GID:-1000}"
         working_dir: /var/www/html
@@ -69,38 +73,25 @@ services:
             - .:/var/www/html
         profiles: [testing]
 
-    mysql:
-        image: mysql:latest
+    # Postgres 18 is the database and also the cache, session and queue store.
+    postgres:
+        image: postgres:18
         restart: unless-stopped
         environment:
-            MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-password}
-            MYSQL_DATABASE: ${DB_DATABASE:-laravel}
-            MYSQL_USER: ${DB_USERNAME:-laravel}
-            MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+            POSTGRES_DB: ${DB_DATABASE:-laravel}
+            POSTGRES_USER: ${DB_USERNAME:-laravel}
+            POSTGRES_PASSWORD: ${DB_PASSWORD:?set DB_PASSWORD in .env}
         ports:
-            - "${FORWARD_DB_PORT:-3306}:3306"
+            - "127.0.0.1:${FORWARD_DB_PORT:-5432}:5432"
         volumes:
-            - mysql-data:/var/lib/mysql
+            # Postgres 18 images keep data under /var/lib/postgresql/18; mount the parent.
+            - postgres-data:/var/lib/postgresql
         healthcheck:
-            test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-password}"]
+            test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
             interval: 5s
             timeout: 5s
             retries: 20
-            start_period: 60s
-        networks: [laravel]
-
-    valkey:
-        image: valkey/valkey:8-alpine
-        restart: unless-stopped
-        ports:
-            - "${FORWARD_VALKEY_PORT:-6379}:6379"
-        volumes:
-            - valkey-data:/data
-        healthcheck:
-            test: ["CMD", "valkey-cli", "ping"]
-            interval: 5s
-            timeout: 5s
-            retries: 10
+            start_period: 30s
         networks: [laravel]
 
     reverb:
@@ -122,11 +113,11 @@ services:
         <<: *app-env
         volumes:
             - .:/var/www/html
-        command: php artisan queue:work redis --tries=3 --backoff=3
+        command: php artisan queue:work database --tries=3 --backoff=3
         restart: unless-stopped
         depends_on:
-            - app
-            - valkey
+            postgres:
+                condition: service_healthy
         networks: [laravel]
 
     scheduler:
@@ -138,7 +129,8 @@ services:
         command: php artisan schedule:work
         restart: unless-stopped
         depends_on:
-            - app
+            postgres:
+                condition: service_healthy
         networks: [laravel]
 
     rustfs:
@@ -164,6 +156,5 @@ networks:
 
 volumes:
     pnpm-store:
-    mysql-data:
-    valkey-data:
+    postgres-data:
     rustfs-data:

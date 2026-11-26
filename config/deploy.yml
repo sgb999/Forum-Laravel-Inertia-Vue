@@ -1,0 +1,138 @@
+<%
+  # Shared by builder.args and the reverb proxy host below: ENV.fetch alone
+  # only catches an unset var, not one exported as an empty/whitespace string
+  # (which would silently bake a blank key/host into the built JS, or give
+  # kamal-proxy an empty Host to route on).
+  def require_env!(name)
+    ENV.fetch(name).tap do |value|
+      raise KeyError, "#{name} is set but blank" if value.strip.empty?
+    end
+  end
+%>
+# Name of your application. Used to uniquely identify containers.
+service: forum
+
+# Every deploy must target -d staging or -d production so staging and
+# production containers, volumes, secrets, and databases stay separated.
+require_destination: true
+
+# Name of the container image.
+image: sgb999/forum-laravel-inertia-vue
+
+# Deploy to these servers.
+servers:
+  web:
+    hosts:
+      - <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+  worker:
+    hosts:
+      - <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+    # No --force: during any future maintenance window (including a schema
+    # migration not yet applied), this standing process should idle rather
+    # than process jobs against a database it can't be sure is ready. A
+    # cutover or similar one-off drain uses its own
+    # `queue:work --force --stop-when-empty` run manually (see README), not
+    # this role's cmd.
+    cmd: php artisan queue:work database --tries=3 --backoff=3
+  scheduler:
+    hosts:
+      - <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+    cmd: php artisan schedule:work
+  reverb:
+    hosts:
+      - <%= ENV.fetch("KAMAL_DEPLOY_HOST", "127.0.0.1") %>
+    cmd: php artisan reverb:start --host=0.0.0.0 --port=8080
+    # Reverb never shares the web role's port 80 - without its own proxy
+    # entry, kamal-proxy has no route for it at all, so WebSocket upgrades
+    # and the Pusher-compatible broadcast API (/app/*, /apps/*) 404 even
+    # though the web healthcheck passes. host-route them to this role by
+    # REVERB_HOST, the same public hostname Echo (resources/js/echo.ts)
+    # already connects to. ssl: false matches the top-level web proxy:
+    # TLS for both hosts is terminated by the external reverse proxy on
+    # Unraid (see README), which forwards plain HTTP/WS to kamal-proxy.
+    # Reverb answers GET /up with 200 (vendor/laravel/reverb's own
+    # HealthCheckController), so the default healthcheck path works as-is.
+    proxy:
+      host: <%= require_env!("REVERB_HOST") %>
+      app_port: 8080
+      ssl: false
+      healthcheck:
+        path: /up
+        interval: 3
+
+# One kamal-proxy container runs on the Unraid host and routes by Host header
+# across both destinations. Because Unraid's own web UI binds host ports 80
+# and 443, kamal-proxy publishes on non-80/443 host ports via proxy.run.
+proxy:
+  ssl: false
+  app_port: 80
+  healthcheck:
+    path: /up
+    interval: 3
+  run:
+    http_port: <%= Integer(ENV.fetch("KAMAL_PROXY_HTTP_PORT", "8080")) %>
+    https_port: <%= Integer(ENV.fetch("KAMAL_PROXY_HTTPS_PORT", "8443")) %>
+
+# Credentials for your image host.
+registry:
+  server: ghcr.io
+  username: sgb999
+  password:
+    - KAMAL_REGISTRY_PASSWORD
+
+# Inject ENV variables into containers (secrets come from .kamal/secrets.<destination>).
+env:
+  clear:
+    APP_NAME: Forum
+    APP_ENV: production
+    APP_DEBUG: "false"
+    LOG_CHANNEL: stderr
+    LOG_LEVEL: info
+    DB_CONNECTION: pgsql
+    DB_HOST: forum-postgres
+    DB_PORT: "5432"
+    BROADCAST_CONNECTION: reverb
+    CACHE_STORE: database
+    FILESYSTEM_DISK: public
+    MEDIA_DISK: public
+    QUEUE_CONNECTION: database
+    SESSION_DRIVER: database
+    REVERB_SERVER_HOST: 0.0.0.0
+    REVERB_SERVER_PORT: "8080"
+  secret:
+    - APP_KEY
+    - APP_URL
+    - DB_PASSWORD
+    - REVERB_APP_ID
+    - REVERB_APP_KEY
+    - REVERB_APP_SECRET
+    - REVERB_HOST
+    - REVERB_PORT
+    - REVERB_SCHEME
+    - AWS_ACCESS_KEY_ID
+    - AWS_SECRET_ACCESS_KEY
+    - AWS_DEFAULT_REGION
+    - AWS_BUCKET
+    - AWS_ENDPOINT
+    - AWS_USE_PATH_STYLE_ENDPOINT
+
+# Aliases are triggered with "bin/kamal <alias>".
+aliases:
+  console: app exec --interactive --reuse "php artisan tinker"
+  shell: app exec --interactive --reuse "bash"
+  logs: app logs -f
+  artisan: app exec --interactive --reuse "php artisan"
+
+# Bridge fingerprinted Vite assets between versions to avoid 404s on in-flight requests.
+asset_path: /var/www/html/public/build
+
+# Configure the image builder.
+builder:
+  arch: amd64
+  dockerfile: docker/php/Dockerfile
+  target: production
+  args:
+    VITE_REVERB_APP_KEY: <%= require_env!("REVERB_APP_KEY") %>
+    VITE_REVERB_HOST: <%= require_env!("REVERB_HOST") %>
+    VITE_REVERB_PORT: <%= ENV.fetch("REVERB_PORT", "443") %>
+    VITE_REVERB_SCHEME: <%= ENV.fetch("REVERB_SCHEME", "https") %>

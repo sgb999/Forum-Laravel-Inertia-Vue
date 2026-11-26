@@ -3,23 +3,87 @@ set -e
 
 # Setup storage and cache directories
 mkdir -p \
+    storage/app/public/default \
     storage/framework/sessions \
     storage/framework/views \
     storage/framework/cache \
     storage/logs \
     bootstrap/cache
 
-# Fix permissions
+# Sync tracked default avatars/banners into the persistent storage volume
+if [ -d /usr/local/share/forum-default ]; then
+    cp -a /usr/local/share/forum-default/. storage/app/public/default/ 2>/dev/null || true
+fi
+
+# Ensure proper permissions (ignore errors if volume mounts forbid it on host)
 chown -R www-data:www-data storage bootstrap/cache 2>/dev/null || true
 chmod -R 775 storage bootstrap/cache 2>/dev/null || true
+
+# Ensure public/storage symlink exists when storage is mounted as a persistent volume
+if [ ! -e public/storage ] && [ ! -L public/storage ]; then
+    ln -s ../storage/app/public public/storage 2>/dev/null || true
+fi
+
+# Production initialization: apply migrations exactly once before any role
+# starts, instead of every role racing `migrate --force` against the same
+# database. Kamal's web role runs the image's default CMD (supervisord);
+# worker, scheduler and reverb override "$@" with their own `php artisan ...`
+# command (see config/deploy.yml). Use that to make web the sole migration
+# owner, and have every other role wait for it to finish first.
+if [ "$APP_ENV" = "production" ]; then
+    case "$1" in
+        *supervisord*)
+            # `migrate --isolated` was tried here first, but its mutex is backed
+            # by the `cache_locks` table - which doesn't exist yet on a brand
+            # new database, since it's itself created by the migration this is
+            # supposed to guard. `migrate:owned` (app/Console/Commands) takes a
+            # Postgres session advisory lock instead, which needs no table, so
+            # it also works on a completely empty database. An overlapping web
+            # container from a rolling deploy blocks on the lock instead of
+            # skipping, then runs migrate --force itself once it gets it (a
+            # no-op if the first container already finished, or a retry if
+            # that container died mid-migration), and fails non-zero if the
+            # lock never frees within the timeout.
+            php artisan migrate:owned
+            ;;
+        *)
+            echo "[entrypoint] waiting for the web role to finish migrations..."
+            WAIT_TIMEOUT="${MIGRATION_WAIT_TIMEOUT:-300}"
+            WAITED=0
+            while true; do
+                # --pending=1 exits 0 once nothing is pending, 1 while
+                # migrations are pending OR the migrations table doesn't
+                # exist yet (first boot) - both mean "web isn't done yet".
+                if php artisan migrate:status --pending=1 >/tmp/migrate-status.log 2>&1; then
+                    echo "[entrypoint] migrations are up to date, starting."
+                    break
+                fi
+                if [ "$WAITED" -ge "$WAIT_TIMEOUT" ]; then
+                    # Fail the container instead of starting against a schema
+                    # that isn't ready, so Kamal reports this role as unhealthy
+                    # rather than silently running degraded.
+                    echo "[entrypoint] gave up waiting for migrations after ${WAIT_TIMEOUT}s, refusing to start:" >&2
+                    cat /tmp/migrate-status.log >&2
+                    exit 1
+                fi
+                sleep 2
+                WAITED=$((WAITED + 2))
+            done
+            ;;
+    esac
+fi
 
 # Development specific initialization
 if [ "$APP_ENV" != "production" ]; then
     if [ ! -f .env ] && [ -f .env.example ]; then
+        echo "[entrypoint] Copying .env.example to .env..."
         cp .env.example .env
     fi
 
-    # Keep the `vendor` named volume in sync with composer.lock automatically
+    # Install / sync Composer dependencies whenever composer.lock changes.
+    # app, reverb, queue and scheduler all share the bind-mounted worktree, so
+    # serialize with an atomic mkdir lock inside vendor/ to avoid four containers
+    # racing `composer install` on `docker compose up`.
     if [ -f composer.json ] && [ -f composer.lock ]; then
         mkdir -p vendor
         HASH_FILE="vendor/.composer-lock.hash"
