@@ -1,5 +1,6 @@
 # Keep local state and secrets out of image builds.
 .git
+.worktrees
 .env
 .env.*
 !.env.example

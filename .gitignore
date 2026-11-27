@@ -30,3 +30,6 @@ tests/Browser/Screenshots
 .kamal/secrets.*
 !.kamal/secrets.example
 !.kamal/secrets.*.example
+
+# Local git worktrees (one per task)
+/.worktrees/
