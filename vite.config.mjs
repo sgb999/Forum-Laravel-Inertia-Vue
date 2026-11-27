@@ -36,6 +36,10 @@ export default defineConfig({
         host: '0.0.0.0',
         port: 5173,
         strictPort: true,
+        watch: {
+            // Task worktrees live inside the repo; don't watch their files.
+            ignored: ['**/.worktrees/**'],
+        },
         hmr: {
             host: 'localhost',
             port: 5173,
